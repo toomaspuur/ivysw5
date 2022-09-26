@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+
+        <service id="ivy_payment_plugin.monolog.line.formatter" class="Monolog\Formatter\LineFormatter">
+            <argument>null</argument>
+            <argument>null</argument>
+            <argument>true</argument>
+        </service>
+
+        <service class="IvyPaymentPlugin\Logger\IvyPaymentLogger"
+                 id="ivy_payment_plugin.logger.ivy_payment_logger">
+            <argument>ivy</argument>
+            <call method="init">
+                <argument id="ivy_payment_plugin.config" type="service"/>
+                <argument>%kernel.logs_dir%/ivypayment/payment.log</argument>
+                <argument type="service" id="monolog.processor.uid" />
+                <argument type="service" id="ivy_payment_plugin.monolog.line.formatter"/>
+            </call>
+        </service>
+
+    </services>
+</container>

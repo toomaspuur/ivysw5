@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="../../../engine/Shopware/Components/Plugin/schema/plugin.xsd">
+    <label lang="de">Ivy - Climate Neutral Shopping</label>
+    <label lang="en">Ivy - Climate Neutral Shopping</label>
+    <version>0.4.5</version>
+    <description lang="en">Ivy - Climate Neutral Shopping. Choose Ivy at the payment step. Climate action with every transaction. Finance climate projects by helping online shops save on payment fees.</description>
+    <description lang="de">Ivy - Climate Neutral Shopping. Wähle Ivy bei den Zahlungsarten. Klimaschutz mit jeder Transaktion. Finanziere Klimaschutz, indem du Online-Shops hilfst, Zahlungsgebühren zu sparen.</description>
+    <copyright>(c) by HammerCode OÜ</copyright>
+    <license>proprietary</license>
+    <link>https://www.hammercode.eu/</link>
+    <author>HammerCode OÜ</author>
+
+    <compatibility minVersion="5.5.0" />
+
+    <changelog version="0.4.5">
+        <changes lang="de">Bestellungserstellung behoben</changes>
+        <changes lang="en">Fixed order creation</changes>
+    </changelog>
+
+    <changelog version="0.4.4">
+        <changes lang="de">Bestellungserstellung behoben</changes>
+        <changes lang="en">Fixed order creation</changes>
+    </changelog>
+
+    <changelog version="0.4.3">
+        <changes lang="de">Statuszuordnung geändert</changes>
+        <changes lang="en">Status-mapping changed</changes>
+    </changelog>
+
+    <changelog version="0.4.2">
+        <changes lang="de">CSS</changes>
+        <changes lang="en">CSS</changes>
+    </changelog>
+
+    <changelog version="0.4.1">
+        <changes lang="de">Webhook behoben</changes>
+        <changes lang="en">Webhook fixed</changes>
+    </changelog>
+
+    <changelog version="0.4.0">
+        <changes lang="de">Zahlungstatus behoben</changes>
+        <changes lang="en">Payment status fixed</changes>
+    </changelog>
+
+    <changelog version="0.3.5">
+        <changes lang="de">php 7.1 Kompatibilität</changes>
+        <changes lang="en">php 7.1 compatibility</changes>
+    </changelog>
+
+    <changelog version="0.3.4">
+        <changes lang="de">Erste Veröffentlichung</changes>
+        <changes lang="en">Initial Release</changes>
+    </changelog>
+</plugin>

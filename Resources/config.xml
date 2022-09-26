@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="../../../../engine/Shopware/Components/Plugin/schema/config.xsd">
+
+    <elements>
+
+        <element type="select" scope="shop">
+            <name>logLevel</name>
+            <label lang="de">Log Level</label>
+            <label lang="en">Log level</label>
+            <value>0</value>
+            <store>
+                <option>
+                    <value>400</value>
+                    <label lang="de">Error</label>
+                    <label lang="en">Error</label>
+                </option>
+                <option>
+                    <value>300</value>
+                    <label lang="de">Warning</label>
+                    <label lang="en">Warning</label>
+                </option>
+                <option>
+                    <value>200</value>
+                    <label lang="de">Info</label>
+                    <label lang="en">Info</label>
+                </option>
+                <option>
+                    <value>100</value>
+                    <label lang="de">Debug</label>
+                    <label lang="en">Debug</label>
+                </option>
+            </store>
+        </element>
+
+        <element type="text" required="true" scope="shop">
+            <name>IvyAppId</name>
+            <label lang="de">Deine App ID</label>
+            <label lang="en">Your Ivy App ID</label>
+        </element>
+
+        <element type="text" required="true" scope="shop">
+            <name>IvyMcc</name>
+            <label lang="de">Händlerkategorie Code (MCC)</label>
+            <label lang="en">Merchant category code</label>
+        </element>
+
+        <element type="select" scope="shop">
+            <name>isSandboxActive</name>
+            <label lang="de">Sandbox-Modus aktivieren</label>
+            <label lang="en">Activate Sandbox mode</label>
+            <value>1</value>
+            <description lang="en">In Sandbox mode, the payment implementation can be tested and will not generate real payments.</description>
+            <description lang="de">Im Sandbox-Modus kann die Implementierung der Zahlart getestet werden - es werden keine echten Zahlungen generiert.</description>
+            <store>
+                <option>
+                    <value>1</value>
+                    <label lang="de">Ja</label>
+                    <label lang="en">Yes</label>
+                </option>
+                <option>
+                    <value>0</value>
+                    <label lang="de">Nein</label>
+                    <label lang="en">No</label>
+                </option>
+            </store>
+        </element>
+
+        <element type="button">
+            <name>checkout</name>
+            <label lang="de">Checkout-Styling</label>
+            <label lang="en">Checkout styling</label>
+        </element>
+
+        <element type="select" scope="shop" required="true">
+            <name>checkoutTitle</name>
+            <label lang="de">Titel</label>
+            <label lang="en">Title</label>
+            <store>
+                <option>
+                    <value>0</value>
+                    <label lang="de">Logo</label>
+                    <label lang="en">Logo</label>
+                </option>
+                <option>
+                    <value>1</value>
+                    <label lang="de">Standard</label>
+                    <label lang="en">Default</label>
+                </option>
+                <option>
+                    <value>2</value>
+                    <label lang="de">Custom</label>
+                    <label lang="en">Custom</label>
+                </option>
+            </store>
+        </element>
+        <element type="text" scope="shop">
+            <name>checkoutTitleCustom</name>
+            <label lang="de">Custom Titel</label>
+            <label lang="en">Custom title</label>
+        </element>
+
+        <element type="select" scope="shop" required="true">
+            <name>checkoutSubTitle</name>
+            <label lang="de">Subtitel</label>
+            <label lang="en">Subtitle</label>
+            <store>
+                <option>
+                    <value>0</value>
+                    <label lang="de">Logo</label>
+                    <label lang="en">Logo</label>
+                </option>
+                <option>
+                    <value>1</value>
+                    <label lang="de">Standard</label>
+                    <label lang="en">Default</label>
+                </option>
+                <option>
+                    <value>2</value>
+                    <label lang="de">Custom</label>
+                    <label lang="en">Custom</label>
+                </option>
+            </store>
+        </element>
+        <element type="text" scope="shop">
+            <name>checkoutSubTitleCustom</name>
+            <label lang="de">Custom Subtitel</label>
+            <label lang="en">Custom subtitle</label>
+        </element>
+
+        <element type="select" scope="shop" required="true">
+            <name>checkoutBanner</name>
+            <label lang="de">Checkout Banner aktivieren</label>
+            <label lang="en">Activate checkout banner</label>
+            <store>
+                <option>
+                    <value>1</value>
+                    <label lang="de">Ja</label>
+                    <label lang="en">Yes</label>
+                </option>
+                <option>
+                    <value>0</value>
+                    <label lang="de">Nein</label>
+                    <label lang="en">No</label>
+                </option>
+            </store>
+        </element>
+
+        <element type="button">
+            <name>prod</name>
+            <label lang="de">API-Zugang Produktivmodus</label>
+            <label lang="en">>API Access Production mode</label>
+        </element>
+
+        <element type="text" required="true" scope="shop">
+            <name>IvyApiKey</name>
+            <label lang="de">Ivy API Key</label>
+            <label lang="en">Ivy API Key</label>
+        </element>
+
+        <element type="text" required="true" scope="shop">
+            <name>IvyWebhookSecret</name>
+            <label lang="de">Webhook signing secret</label>
+            <label lang="en">Webhook signing secret</label>
+        </element>
+
+        <element type="button">
+            <name>sandbox</name>
+            <label lang="de">API-Zugang Sandbox-Modus</label>
+            <label lang="en">>API Access Sandbox mode</label>
+        </element>
+
+        <element type="text" required="true" scope="shop">
+            <name>SandboxIvyApiKey</name>
+            <label lang="de">Ivy API Key</label>
+            <label lang="en">Ivy API Key</label>
+        </element>
+
+        <element type="text" required="true" scope="shop">
+            <name>SandboxIvyWebhookSecret</name>
+            <label lang="de">Webhook signing secret</label>
+            <label lang="en">Webhook signing secret</label>
+        </element>
+
+<!--        <element type="text" required="true">-->
+<!--            <name>IvyApiUrlSandbox</name>-->
+<!--            <label lang="de">Ivy Api Sandbox Url</label>-->
+<!--            <label lang="en">Ivy Api Sandbox Url</label>-->
+<!--            <value>https://api.sand.getivy.de/api/service/</value>-->
+<!--        </element>-->
+
+<!--        <element type="text" required="true">-->
+<!--            <name>IvyBannerUrlSandbox</name>-->
+<!--            <label lang="de">Ivy Banner Sandbox Url</label>-->
+<!--            <label lang="en">Ivy Banner Sandbox Url</label>-->
+<!--            <value>https://cdn.sand.getivy.de/banner.js</value>-->
+<!--        </element>-->
+
+    </elements>
+
+</config>

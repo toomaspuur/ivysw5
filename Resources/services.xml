@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <imports>
+        <import resource="loggers.xml"/>
+        <import resource="subscribers.xml"/>
+    </imports>
+
+    <services>
+
+        <service id="ivy_payment_plugin.config" class="Shopware\Components\Plugin\CachedConfigReader">
+            <factory service="shopware.plugin.cached_config_reader" method="getByPluginName"/>
+            <argument type="string">%ivy_payment_plugin.plugin_name%</argument>
+            <argument type="service" id="shop" on-invalid="null"/>
+        </service>
+
+        <service class="IvyPaymentPlugin\Service\IvyPaymentHelper" id="ivy_payment_helper" public="true">
+            <argument id="ivy_payment_plugin.config" type="service"/>
+            <argument id="shopware_media.media_service" type="service"/>
+            <argument id="ivy_payment_plugin.logger.ivy_payment_logger" type="service"/>
+        </service>
+
+
+        <service id="ivy_payment_plugin.commands.payment_plugin" class="IvyPaymentPlugin\Commands\PaymentPlugin">
+            <tag name="console.command" />
+        </service>
+
+
+    </services>
+</container>
