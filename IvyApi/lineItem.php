@@ -27,6 +27,8 @@ class lineItem
     private $category;
     /** @var string  */
     private $ean = '';
+    /** @var float */
+    private $quantity;
 
     /**
      * @return string
@@ -168,4 +170,23 @@ class lineItem
         $this->ean = $ean;
         return $this;
     }
+
+    /**
+     * @return float
+     */
+    public function getQuantity()
+    {
+        return $this->quantity;
+    }
+
+    /**
+     * @param float $quantity
+     * @return lineItem
+     */
+    public function setQuantity($quantity)
+    {
+        $this->quantity = $quantity;
+        return $this;
+    }
+
 }

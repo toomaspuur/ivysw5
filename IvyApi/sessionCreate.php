@@ -29,6 +29,10 @@ class sessionCreate
     private $verificationToken = '';
     /** @var array|null */
     private $metadata;
+    /** @var bool */
+    private $express = false;
+    /** @var string */
+    private $plugin;
 
     /**
      * @param string $referenceId
@@ -202,4 +206,42 @@ class sessionCreate
     {
         return $this->metadata;
     }
+
+    /**
+     * @return bool
+     */
+    public function isExpress()
+    {
+        return $this->express;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getPlugin()
+    {
+        return $this->plugin;
+    }
+
+    /**
+     * @param bool $express
+     * @return sessionCreate
+     */
+    public function setExpress($express)
+    {
+        $this->express = $express;
+        return $this;
+    }
+
+    /**
+     * @param string $plugin
+     * @return sessionCreate
+     */
+    public function setPlugin($plugin)
+    {
+        $this->plugin = $plugin;
+        return $this;
+    }
+
 }

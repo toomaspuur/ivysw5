@@ -31,10 +31,13 @@ use Symfony\Component\Serializer\Serializer;
 
 class IvyPaymentHelper
 {
+    const MCC_DEFAULT = '5712';
     const LIVE_URL= 'https://api.getivy.de/api/service/';
     const TEST_URL= 'https://api.sand.getivy.de/api/service/';
     const LIVE_BANNER = 'https://cdn.getivy.de/banner.js';
     const TEST_BANNER = 'https://cdn.sand.getivy.de/banner.js';
+    const LIVE_BUTTON = 'https://cdn.getivy.de/button.js';
+    const TEST_BUTTON = 'https://cdn.sand.getivy.de/button.js';
     /**
      * @var mixed
      */
@@ -44,11 +47,6 @@ class IvyPaymentHelper
      * @var mixed
      */
     private $ivyApiKey;
-
-    /**
-     * @var mixed
-     */
-    private $ivyAppId;
 
     /**
      * @var mixed
@@ -80,8 +78,19 @@ class IvyPaymentHelper
      */
     private $ivyBannerUrl;
 
+    /**
+     * @var mixed|string
+     */
+    private $ivyButtonUrl;
+
+    /**
+     * @var string
+     */
+    private $version;
+
     public function __construct(
-        array $config, MediaService $mediaService,
+        array $config,
+        MediaService $mediaService,
         Logger $logger
     )
     {
@@ -90,22 +99,41 @@ class IvyPaymentHelper
         if ($isSandboxActive) {
             $this->ivyServiceUrl = isset($config["IvyApiUrlSandbox"]) ? $config["IvyApiUrlSandbox"] : self::TEST_URL;
             $this->ivyBannerUrl = isset($config["IvyBannerUrlSandbox"]) ? $config["IvyBannerUrlSandbox"] : self::TEST_BANNER;
+            $this->ivyButtonUrl = isset($config["IvyBannerUrlSandbox"]) ? $config["IvyBannerUrlSandbox"] : self::TEST_BUTTON;
             $this->ivyApiKey = $config["SandboxIvyApiKey"];
             $this->ivyWebhookSecret = $config["SandboxIvyWebhookSecret"];
         } else {
             $this->ivyServiceUrl = self::LIVE_URL;
             $this->ivyBannerUrl =  self::LIVE_BANNER;
+            $this->ivyButtonUrl =  self::LIVE_BUTTON;
             $this->ivyApiKey = $config["IvyApiKey"];
             $this->ivyWebhookSecret = $config["IvyWebhookSecret"];
         }
 
-        $this->ivyAppId = $config["IvyAppId"];
-        $this->ivyMcc = $config["IvyMcc"];
+        $this->ivyMcc = self::MCC_DEFAULT;;
 
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $normalizers = [new ObjectNormalizer()];
         $this->serializer = new Serializer($normalizers, $encoders);
         $this->mediaService = $mediaService;
+        $pluginName = Shopware()->Container()->getParameter('ivy_payment_plugin.plugin_name');
+        $this->version = 'sw5' . Shopware()->Container()->get('dbal_connection')->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName])->fetchOne();
+    }
+
+    /**
+     * @return string
+     */
+    public function getVersion()
+    {
+        return $this->version;
+    }
+
+    /**
+     * @return mixed|string
+     */
+    public function getIvyButtonUrl()
+    {
+        return $this->ivyButtonUrl;
     }
 
     /**
@@ -135,14 +163,6 @@ class IvyPaymentHelper
     /**
      * @return mixed
      */
-    public function getIvyAppId()
-    {
-        return $this->ivyAppId;
-    }
-
-    /**
-     * @return mixed
-     */
     public function getIvyMcc()
     {
         return $this->ivyMcc;
@@ -164,6 +184,10 @@ class IvyPaymentHelper
         return $this->ivyWebhookSecret;
     }
 
+    /**
+     * @return Order
+     * @throws IvyException
+     */
     public function getCurrentTemporaryOrder()
     {
         $temporaryOrderId = $this->getCurrentTemporaryOrderId();
@@ -220,6 +244,20 @@ class IvyPaymentHelper
         $this->logger->error('WebHook Body: ' . $body);
         return false;
     }
+
+    /**
+     * @param $body
+     * @return string
+     */
+    public function sign($body)
+    {
+        return \hash_hmac(
+            'sha256',
+            $body,
+            $this->getIvyWebhookSecret()
+        );
+    }
+
 
     /**
      * @param Order $order
@@ -366,7 +404,8 @@ class IvyPaymentHelper
             ->addShippingMethod($shippingMethod)
             ->setBillingAddress($billingAddress)
             ->setCategory(isset($this->ivyMcc) ? $this->ivyMcc : '')
-            ->setReferenceId(Uuid::uuid4()->toString());
+            ->setReferenceId(Uuid::uuid4()->toString())
+            ->setPlugin($this->getVersion());
         return $data;
     }
 
@@ -385,6 +424,7 @@ class IvyPaymentHelper
                 ->setSingleNet($swLineItem->getPrice())
                 ->setSingleVat($swLineItem->getTaxRate())
                 ->setAmount($swLineItem->getPrice())
+                ->setQuantity($swLineItem->getQuantity())
                 ->setCategory(isset($this->ivyMcc) ? $this->ivyMcc : '');
             $articleDetail = $swLineItem->getArticleDetail();
             if ($articleDetail) {

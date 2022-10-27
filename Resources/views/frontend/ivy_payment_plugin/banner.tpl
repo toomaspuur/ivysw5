@@ -6,7 +6,6 @@
         data-value="{$iviPrice|replace:',':'.'}"
         data-category="{$ivyMcc}"
         data-locale="{$ivyLocale}"
-        data-project-id="{$ivyAppId}"
         data-shop-logo="{link file=$theme.desktopLogo}"
         data-banner-url="{$ivyBannerUrl}"
 ></div>

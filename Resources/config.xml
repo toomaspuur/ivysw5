@@ -33,18 +33,6 @@
             </store>
         </element>
 
-        <element type="text" required="true" scope="shop">
-            <name>IvyAppId</name>
-            <label lang="de">Deine App ID</label>
-            <label lang="en">Your Ivy App ID</label>
-        </element>
-
-        <element type="text" required="true" scope="shop">
-            <name>IvyMcc</name>
-            <label lang="de">Händlerkategorie Code (MCC)</label>
-            <label lang="en">Merchant category code</label>
-        </element>
-
         <element type="select" scope="shop">
             <name>isSandboxActive</name>
             <label lang="de">Sandbox-Modus aktivieren</label>

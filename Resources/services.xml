@@ -19,14 +19,33 @@
         <service class="IvyPaymentPlugin\Service\IvyPaymentHelper" id="ivy_payment_helper" public="true">
             <argument id="ivy_payment_plugin.config" type="service"/>
             <argument id="shopware_media.media_service" type="service"/>
-            <argument id="ivy_payment_plugin.logger.ivy_payment_logger" type="service"/>
+            <argument id="ivy_payment_logger" type="service"/>
         </service>
 
+        <service class="IvyPaymentPlugin\Service\ExpressService" id="ivy_express_service" public="true">
+            <argument id="ivy_payment_helper" type="service"/>
+            <argument id="ivy_api_client" type="service"/>
+            <argument id="models" type="service"/>
+            <argument id="config" type="service"/>
+            <argument id="shopware.form.factory" type="service"/>
+            <argument id="shopware_storefront.context_service" type="service"/>
+            <argument id="shopware_account.register_service" type="service"/>
+            <argument id="front" type="service"/>
+            <argument id="ivy_express_logger" type="service"/>
+        </service>
+
+        <service class="IvyPaymentPlugin\Service\IvyApiClient" id="ivy_api_client">
+            <argument id="ivy_payment_helper" type="service"/>
+            <argument id="ivy_payment_plugin.logger.ivy_api_logger" type="service"/>
+        </service>
 
         <service id="ivy_payment_plugin.commands.payment_plugin" class="IvyPaymentPlugin\Commands\PaymentPlugin">
             <tag name="console.command" />
         </service>
 
+        <service class="IvyPaymentPlugin\Service\StoreProxy" id="ivy_store_proxy" public="true">
+            <argument id="router" type="service"/>
+        </service>
 
     </services>
 </container>

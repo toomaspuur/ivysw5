@@ -133,6 +133,20 @@ class IvyTransaction extends ModelEntity
     private $swPaymentToken;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="initial_session_id", type="string", length=128, nullable=true)
+     */
+    private $initialSessionId;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="sw_context_token", type="string", length=255, nullable=true))
+     */
+    private $swContextToken;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="updated", type="datetime", nullable=true)
@@ -337,4 +351,39 @@ class IvyTransaction extends ModelEntity
     {
         $this->reference = $reference;
     }
+
+    /**
+     * @return string
+     */
+    public function getSwContextToken()
+    {
+        return $this->swContextToken;
+    }
+
+    /**
+     * @param string $swContextToken
+     */
+    public function setSwContextToken($swContextToken)
+    {
+        $this->swContextToken = $swContextToken;
+    }
+
+    /**
+     * @return string
+     */
+    public function getInitialSessionId()
+    {
+        return $this->initialSessionId;
+    }
+
+    /**
+     * @param string $initialSessionId
+     * @return IvyTransaction
+     */
+    public function setInitialSessionId($initialSessionId)
+    {
+        $this->initialSessionId = $initialSessionId;
+        return $this;
+    }
+
 }
