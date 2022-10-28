@@ -54,6 +54,7 @@ class IvyPaymentPlugin extends Plugin
         parent::install($context);
         $this->manageSchema();
         $this->managePayments($context);
+        $this->setDefaults();
     }
 
     /**
@@ -66,7 +67,37 @@ class IvyPaymentPlugin extends Plugin
         $this->manageSchema();
         $this->managePayments($context);
         $context->scheduleClearCache(InstallContext::CACHE_LIST_ALL);
+        $this->setDefaults();
         return true;
+    }
+
+    private function setDefaults()
+    {
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'logLevel', 'value' => 's:3:"400";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'isSandboxActive', 'value' => 's:1:"0";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'checkoutTitle', 'value' => 's:1:"0";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'checkoutSubTitle', 'value' => 's:1:"1";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'checkoutBanner', 'value' => 's:1:"1";']);
     }
 
     /**

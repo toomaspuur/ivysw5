@@ -8,7 +8,6 @@
             <name>logLevel</name>
             <label lang="de">Log Level</label>
             <label lang="en">Log level</label>
-            <value>0</value>
             <store>
                 <option>
                     <value>400</value>
@@ -37,7 +36,6 @@
             <name>isSandboxActive</name>
             <label lang="de">Sandbox-Modus aktivieren</label>
             <label lang="en">Activate Sandbox mode</label>
-            <value>1</value>
             <description lang="en">In Sandbox mode, the payment implementation can be tested and will not generate real payments.</description>
             <description lang="de">Im Sandbox-Modus kann die Implementierung der Zahlart getestet werden - es werden keine echten Zahlungen generiert.</description>
             <store>
