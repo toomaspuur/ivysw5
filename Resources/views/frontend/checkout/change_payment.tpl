@@ -31,7 +31,7 @@
 {block name="frontend_checkout_payment_fieldset_description"}
     {if $payment_mean.name === 'ivy_payment'}
         {if $ivyConfig.checkoutBanner == '1'}
-            {include file="frontend/ivy_payment_plugin/banner.tpl" iviBannerType='payment' iviPrice=$sBasket.AmountNet}
+            {include file="frontend/ivy_payment_plugin/banner.tpl" iviBannerType='payment' addClass='method--label' iviPrice=$sBasket.AmountNet}
         {/if}
     {else}
         {$smarty.block.parent}

@@ -1,5 +1,5 @@
 <div
-        class="ivy-banner"
+        class="ivy-banner {if $addClass}{$addClass}{/if}"
         style="visibility: hidden;"
         {if $iviBannerType}data-variant="{$iviBannerType}"{/if}
         {if $unitPrice}data-unitprice="{$unitPrice|replace:',':'.'}"{/if}
