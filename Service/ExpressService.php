@@ -492,7 +492,7 @@ class ExpressService
             $singleVat = $singleTotal - $singleNet;
             $quantity = $swLineItem['quantity'];
             $lineItem->setName($swLineItem['articlename'])
-                ->setReferenceId($swLineItem['articleID'])
+                ->setReferenceId($swLineItem['ordernumber'])
                 ->setCategory($ivyMcc)
                 ->setSingleNet($singleNet)
                 ->setSingleVat($singleVat)
@@ -550,8 +550,8 @@ class ExpressService
             if ($lineItem['articlename'] !== $payloadLineItem['name']) {
                 $violations[] = '$payloadLineItem["name"] is ' . $payloadLineItem["name"] . ' waited ' . $lineItem['articlename'];
             }
-            if ($lineItem['articleID'] !== $payloadLineItem['referenceId']) {
-                $violations[] = '$payloadLineItem["referenceId"] is ' . $payloadLineItem["referenceId"] . ' waited ' . $lineItem['articleID'];
+            if ($lineItem['ordernumber'] !== $payloadLineItem['referenceId']) {
+                $violations[] = '$payloadLineItem["referenceId"] is ' . $payloadLineItem["referenceId"] . ' waited ' . $lineItem['ordernumber'];
             }
 
             $singleNet = $lineItem['netprice'];
