@@ -276,7 +276,9 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $this->verifyBasketSignature($signature, $basket);
         } catch (\Exception $e) {
             $this->logger->error('successAction verify error');
+            $this->logger->error($e->getMessage());
             $this->redirect(['controller' => 'IvyPayment', 'action' => 'error']);
+            return;
         }
 
         $transaction = Shopware()->Models()
@@ -286,7 +288,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
         if (!$transaction instanceof IvyTransaction) {
             $this->logger->error('transaction with _sw_payment_token ' . $signature . ' not found');
             $this->redirect(['controller' => 'IvyPayment', 'action' => 'error']);
-
+            return;
         }
         $status = IvyTransaction::STATUS_AUTH;
         $transaction->setStatus($status);

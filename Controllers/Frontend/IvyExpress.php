@@ -173,6 +173,9 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $transaction->setStatus(IvyTransaction::STATUS_CREATED);
             $transaction->setReference($referenceId);
             $transaction->setSwContextToken($swContexToken);
+            if (!$isExpress && isset($swPaymentToken)) {
+                $transaction->setSwPaymentToken($swPaymentToken);
+            }
             $this->logger->debug('flush transaction');
             $this->em->flush($transaction);
             $this->logger->info('redirect to ' . $redirectUrl);
