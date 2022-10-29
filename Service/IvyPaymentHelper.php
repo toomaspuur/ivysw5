@@ -270,7 +270,10 @@ class IvyPaymentHelper
     public function createIvySession(Order $order, $swPaymentToken)
     {
         $data = $this->getSessionCreateDataFromOrder($order);
-        $data->setMetadata(['_sw_payment_token' => $swPaymentToken]);
+        $data->setMetadata([
+            '_sw_payment_token' => $swPaymentToken,
+            'sw-context-token' => Shopware()->Session()->getId(),
+            ]);
         $data->setVerificationToken($swPaymentToken);
         $data->setHandshake(true);
 

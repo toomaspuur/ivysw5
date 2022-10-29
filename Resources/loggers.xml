@@ -21,16 +21,6 @@
             </call>
         </service>
 
-        <service class="IvyPaymentPlugin\Logger\IvyPaymentLogger" id="ivy_express_logger" public="true">
-            <argument>ivy</argument>
-            <call method="init">
-                <argument id="ivy_payment_plugin.config" type="service"/>
-                <argument>%kernel.logs_dir%/ivypayment/express.log</argument>
-                <argument type="service" id="monolog.processor.uid" />
-                <argument type="service" id="ivy_payment_plugin.monolog.line.formatter"/>
-            </call>
-        </service>
-
         <service class="IvyPaymentPlugin\Logger\IvyPaymentLogger"
                  id="ivy_payment_plugin.logger.ivy_api_logger">
             <argument>ivy</argument>

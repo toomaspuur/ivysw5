@@ -65,6 +65,12 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
      */
     public function preDispatch()
     {
+        if ($this->session->offsetExists('IvyNotExpressCheckout') ) {
+            $this->logger = $this->logger->withName('normal');
+        } else {
+            $this->logger = $this->logger->withName('express');
+        }
+
         $payments = $this->getPayments();
         $iviEnabled = false;
         foreach ($payments as $payment) {
