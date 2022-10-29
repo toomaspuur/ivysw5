@@ -256,17 +256,18 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                     throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
                 }
 
-                $this->expressService->updateUser($payload);
+                if ($ivyPaymentSession->isExpress()) {
+                    $this->expressService->updateUser($payload);
+                    // reload user data in controller
+                    $this->View()->assign('sUserData', $this->getUserData());
 
-                // reload user data in controller
-                $this->View()->assign('sUserData', $this->getUserData());
-
-                $paymentId = $this->expressService->getPaymentId();
-                $shippingMethod = $payload['shippingMethod'];
-                $this->logger->info('set shipping method:  ' . \print_r($shippingMethod, true));
-                $shippingMethodId = $shippingMethod['reference'];
-                $this->setDispatch($shippingMethodId, $paymentId);
-                $this->get(ContextServiceInterface::class)->initializeShopContext();
+                    $paymentId = $this->expressService->getPaymentId();
+                    $shippingMethod = $payload['shippingMethod'];
+                    $this->logger->info('set shipping method:  ' . \print_r($shippingMethod, true));
+                    $shippingMethodId = $shippingMethod['reference'];
+                    $this->setDispatch($shippingMethodId, $paymentId);
+                    $this->get(ContextServiceInterface::class)->initializeShopContext();
+                }
 
                 $this->expressService->validateConfirmPayload($payload, $this->getBasket());
                 $this->logger->info('confrim payload is valid');

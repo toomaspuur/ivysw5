@@ -71,8 +71,6 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
         if ($this->request->getActionName() !== 'start' && $this->request->getActionName() !== 'refresh' ) {
             if ($this->session->offsetExists('IvyNotExpressCheckout') ) {
                 $this->logger = $this->logger->withName('normal');
-            } else {
-                $this->logger = $this->logger->withName('express');
             }
             $referenceId = $this->request->get('reference');
             if ($referenceId === null) {
