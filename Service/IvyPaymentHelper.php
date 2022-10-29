@@ -33,11 +33,11 @@ class IvyPaymentHelper
 {
     const MCC_DEFAULT = '5712';
     const LIVE_URL= 'https://api.getivy.de/api/service/';
-    const TEST_URL= 'https://api.sand.getivy.de/api/service/';
+    const TEST_URL= 'https://api.stage.getivy.de/api/service/';
     const LIVE_BANNER = 'https://cdn.getivy.de/banner.js';
-    const TEST_BANNER = 'https://cdn.sand.getivy.de/banner.js';
+    const TEST_BANNER = 'https://cdn.stage.getivy.de/banner.js';
     const LIVE_BUTTON = 'https://cdn.getivy.de/button.js';
-    const TEST_BUTTON = 'https://cdn.sand.getivy.de/button.js';
+    const TEST_BUTTON = 'https://cdn.stage.getivy.de/button.js';
     /**
      * @var mixed
      */
