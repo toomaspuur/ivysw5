@@ -424,13 +424,18 @@ class IvyPaymentHelper
         $ivyLineItems = array();
         /** @var Detail $swLineItems */
         foreach ($order->getDetails() as $swLineItem) {
+            $singleTotal = $swLineItem->getPrice();
+            $singleNet = $singleTotal * 100 / (100 + $swLineItem->getTaxRate());
+            $singleVat = $singleTotal - $singleNet;
+            $quantity = $swLineItem->getQuantity();
+
             $lineItem = new lineItem();
             $lineItem->setName($swLineItem->getArticleName())
                 ->setReferenceId($swLineItem->getArticleNumber())
-                ->setSingleNet($swLineItem->getPrice())
-                ->setSingleVat($swLineItem->getTaxRate())
-                ->setAmount($swLineItem->getPrice())
-                ->setQuantity($swLineItem->getQuantity())
+                ->setSingleNet($singleNet)
+                ->setSingleVat($singleVat)
+                ->setAmount($singleTotal * $quantity)
+                ->setQuantity($quantity)
                 ->setCategory(isset($this->ivyMcc) ? $this->ivyMcc : '');
             $articleDetail = $swLineItem->getArticleDetail();
             if ($articleDetail) {
