@@ -127,6 +127,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
                 if ($order) {
                     $swPaymentToken = $this->persistBasket();
                     $ivySession = $this->ivyHelper->createIvySession($order, $swPaymentToken);
+                    $ivySession['handshake'] = true;
                 } else {
                     throw new IvyException('temporary order not found');
                 }
