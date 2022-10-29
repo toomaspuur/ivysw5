@@ -10,6 +10,7 @@
 namespace IvyPaymentPlugin\Service;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\address;
 use IvyPaymentPlugin\IvyApi\lineItem;
@@ -261,15 +262,17 @@ class IvyPaymentHelper
 
     /**
      * @param Order $order
-     * @param string $swPaymentToken
+     * @param $swPaymentToken
      * @return mixed
      * @throws IvyException
+     * @throws GuzzleException
      */
     public function createIvySession(Order $order, $swPaymentToken)
     {
         $data = $this->getSessionCreateDataFromOrder($order);
         $data->setMetadata(['_sw_payment_token' => $swPaymentToken]);
         $data->setVerificationToken($swPaymentToken);
+        $data->setHandshake(true);
 
         $jsonContent = $this->serializer->serialize($data, 'json');
 

@@ -191,7 +191,7 @@ class ExpressService
         $ivyExpressSessionData->setPlugin($this->ivyHelper->getVersion());
         $jsonContent = $this->serializer->serialize($ivyExpressSessionData, 'json');
         $asArray = \json_decode($jsonContent, true);
-        unset($asArray['billingAddress']);
+        unset($asArray['billingAddress'], $asArray['handshake']);
         $jsonContent = \json_encode($asArray);
         $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
         if (empty($response['redirectUrl'])) {

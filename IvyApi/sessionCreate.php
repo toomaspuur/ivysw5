@@ -33,6 +33,8 @@ class sessionCreate
     private $express = false;
     /** @var string */
     private $plugin;
+    /** @var bool */
+    private $handshake = false;
 
     /**
      * @param string $referenceId
@@ -241,6 +243,24 @@ class sessionCreate
     public function setPlugin($plugin)
     {
         $this->plugin = $plugin;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isHandshake()
+    {
+        return $this->handshake;
+    }
+
+    /**
+     * @param bool $handshake
+     * @return sessionCreate
+     */
+    public function setHandshake($handshake)
+    {
+        $this->handshake = $handshake;
         return $this;
     }
 
