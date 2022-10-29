@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="../../../engine/Shopware/Components/Plugin/schema/plugin.xsd">
     <label lang="de">Ivy - Climate Neutral Shopping</label>
     <label lang="en">Ivy - Climate Neutral Shopping</label>
-    <version>0.6.4</version>
+    <version>0.6.5</version>
     <description lang="en">Ivy - Climate Neutral Shopping. Choose Ivy at the payment step. Climate action with every transaction. Finance climate projects by helping online shops save on payment fees.</description>
     <description lang="de">Ivy - Climate Neutral Shopping. Wähle Ivy bei den Zahlungsarten. Klimaschutz mit jeder Transaktion. Finanziere Klimaschutz, indem du Online-Shops hilfst, Zahlungsgebühren zu sparen.</description>
     <copyright>(c) by HammerCode OÜ</copyright>

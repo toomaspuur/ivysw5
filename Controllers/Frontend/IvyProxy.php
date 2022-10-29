@@ -7,6 +7,7 @@
  * @link https://www.hammercode.eu/
  */
 
+use IvyPaymentPlugin\Components\BasketPersisterTrait;
 use IvyPaymentPlugin\Components\IvyJsonResponse;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyPaymentPlugin;
@@ -15,8 +16,6 @@ use IvyPaymentPlugin\Service\ExpressService;
 use IvyPaymentPlugin\Service\IvyPaymentHelper;
 use Shopware\Bundle\CartBundle\CartPositionsMode;
 use Shopware\Bundle\StoreFrontBundle\Service\ContextServiceInterface;
-use Shopware\Components\BasketSignature\BasketPersister;
-use Shopware\Components\BasketSignature\BasketSignatureGeneratorInterface;
 use Shopware\Components\CSRFWhitelistAware;
 use Shopware\Components\Model\ModelManager;
 use Shopware\Models\Customer\Customer;
@@ -57,6 +56,8 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
     {
         return ['callback', 'confirm', 'finish'];
     }
+
+    use BasketPersisterTrait;
 
     /**
      * @return void
@@ -308,21 +309,4 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
         return $payload;
     }
 
-    /**
-     * @return string
-     * @throws Exception
-     */
-    private function persistBasket()
-    {
-        /** @var BasketSignatureGeneratorInterface $generator */
-        $generator = $this->get('basket_signature_generator');
-        $basket = $this->session->offsetGet('sOrderVariables')->getArrayCopy();
-        $signature = $generator->generateSignature($basket['sBasket'], $this->session->get('sUserId'));
-
-        /** @var BasketPersister $persister */
-        $persister = $this->get('basket_persister');
-        $persister->persist($signature, $basket);
-
-        return $signature;
-    }
 }

@@ -1,6 +1,6 @@
 {if $ivyEnabled}
 <div class="ivy--express-checkout-btn"
-     data-action="{url controller=IvyExpress action=start}"
+     data-action="{url controller=IvyExpress action=start expres='true'}"
      data-refresh="{url controller=IvyExpress action=refresh}"
      {if $ivyAddToCart}data-add-to-ivycart="true"{/if}>
     <div

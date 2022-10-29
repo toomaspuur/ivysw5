@@ -8,6 +8,7 @@
  */
 
 use GuzzleHttp\Exception\GuzzleException;
+use IvyPaymentPlugin\Components\BasketPersisterTrait;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\Logger\IvyPaymentLogger;
 use IvyPaymentPlugin\Models\IvyTransaction;
@@ -38,11 +39,18 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
      */
     private $expressService;
 
+    /**
+     * @var IvyPaymentHelper|mixed|object|\Symfony\Component\DependencyInjection\Container|null
+     */
+    private $ivyHelper;
+
 
     public function getWhitelistedCSRFActions()
     {
         return ['start', 'callback', 'confirm', 'finish', 'proxy'];
     }
+
+    use BasketPersisterTrait;
 
     /**
      * @return void
@@ -54,6 +62,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
         parent::preDispatch();
         $this->em = $this->getModelManager();
         $this->expressService = $this->container->get('ivy_express_service');
+        $this->ivyHelper = $this->container->get('ivy_payment_helper');
         /** @var IvyPaymentHelper $ivyHelper */
         $ivyHelper = $this->expressService->getIvyHelper();
         /** @var StoreProxy $storeProxy */
@@ -106,10 +115,22 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
         $this->logger->info('-- create new express session');
         $data = [];
         try {
+            $isExpress = $this->Request()->get('express', true);
+            $isExpress = $isExpress === 'true' || $isExpress === true;
             $basket = $this->getBasket();
             $dispatch = $this->getSelectedDispatch();
             $country = $this->getSelectedCountry();
-            $ivySession = $this->expressService->createExpressSession($basket, $dispatch, $country);
+            if ($isExpress) {
+                $ivySession = $this->expressService->createExpressSession($basket, $dispatch, $country);
+            } else {
+                $order = $this->ivyHelper->getCurrentTemporaryOrder();
+                if ($order) {
+                    $swPaymentToken = $this->persistBasket();
+                    $ivySession = $this->ivyHelper->createIvySession($order, $swPaymentToken);
+                } else {
+                    throw new IvyException('temporary order not found');
+                }
+            }
 
             $swContexToken = $this->expressService->generateSwContextToken();
 
