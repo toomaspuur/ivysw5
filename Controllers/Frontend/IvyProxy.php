@@ -65,12 +65,6 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
      */
     public function preDispatch()
     {
-        if ($this->session->offsetExists('IvyNotExpressCheckout') ) {
-            $this->logger = $this->logger->withName('normal');
-        } else {
-            $this->logger = $this->logger->withName('express');
-        }
-
         $payments = $this->getPayments();
         $iviEnabled = false;
         foreach ($payments as $payment) {
@@ -92,6 +86,11 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
         $this->expressService = $this->container->get('ivy_express_service');
         $this->ivyHelper = $this->expressService->getIvyHelper();
         $this->logger = $this->expressService->getLogger();
+        if ($this->session->offsetExists('IvyNotExpressCheckout') ) {
+            $this->logger = $this->logger->withName('normal');
+        } else {
+            $this->logger = $this->logger->withName('express');
+        }
     }
 
     /**
