@@ -147,6 +147,13 @@ class IvyTransaction extends ModelEntity
     private $swContextToken;
 
     /**
+     * @var bool
+     *
+     * @ORM\Column(name="express", type="boolean"))
+     */
+    private $express = false;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="updated", type="datetime", nullable=true)
@@ -383,6 +390,24 @@ class IvyTransaction extends ModelEntity
     public function setInitialSessionId($initialSessionId)
     {
         $this->initialSessionId = $initialSessionId;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isExpress()
+    {
+        return $this->express;
+    }
+
+    /**
+     * @param bool $express
+     * @return IvyTransaction
+     */
+    public function setExpress($express)
+    {
+        $this->express = $express;
         return $this;
     }
 

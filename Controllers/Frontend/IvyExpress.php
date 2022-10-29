@@ -112,7 +112,6 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
      */
     public function startAction()
     {
-        $this->logger->info('-- create new express session');
         $data = [];
         try {
             $isExpress = $this->Request()->get('express', true);
@@ -121,8 +120,12 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $dispatch = $this->getSelectedDispatch();
             $country = $this->getSelectedCountry();
             if ($isExpress) {
+                $this->session->offsetUnset('IvyNotExpressCheckout');
+                $this->logger->info('-- create new express ivy session');
                 $ivySession = $this->expressService->createExpressSession($basket, $dispatch, $country);
             } else {
+                $this->session->set('IvyNotExpressCheckout', true);
+                $this->logger->info('-- create new ivy session');
                 $order = $this->ivyHelper->getCurrentTemporaryOrder();
                 if ($order) {
                     $swPaymentToken = $this->persistBasket();
@@ -174,6 +177,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $transaction->setStatus(IvyTransaction::STATUS_CREATED);
             $transaction->setReference($referenceId);
             $transaction->setSwContextToken($swContexToken);
+            $transaction->setExpress($isExpress);
             if (!$isExpress && isset($swPaymentToken)) {
                 $transaction->setSwPaymentToken($swPaymentToken);
             }
