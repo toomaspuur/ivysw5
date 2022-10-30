@@ -7,4 +7,5 @@
         addButtonClass='buybox--button'
         iviPrice=$sArticle.price
         ivyAddToCart=true}
+    <div style="clear: both;"></div>
 {/block}
