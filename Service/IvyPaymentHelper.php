@@ -400,9 +400,11 @@ class IvyPaymentHelper
     public function getSessionCreateDataFromOrder(Order $order)
     {
         $sOrderVariables = Shopware()->Session()->get('sOrderVariables');
-        $ivyLineItems = $this->getLineItems($order);
+        $sBasket = $sOrderVariables['sBasket'];
+
+        $ivyLineItems = $this->getLineItemFromCart($sBasket);
         $billingAddress = $this->getBillingAddress($sOrderVariables);
-        $price = $this->getPrice($order);
+        $price = $this->getPriceFromCart($sBasket, false);
         $shippingMethod = $this->getShippingMethod($order, $sOrderVariables);
         $data = new sessionCreate();
         $data->setPrice($price)
@@ -413,50 +415,6 @@ class IvyPaymentHelper
             ->setReferenceId(Uuid::uuid4()->toString())
             ->setPlugin($this->getVersion());
         return $data;
-    }
-
-    /**
-     * @param Order $order
-     * @return array
-     */
-    private function getLineItems(Order $order)
-    {
-        $ivyLineItems = array();
-        /** @var Detail $swLineItems */
-        foreach ($order->getDetails() as $swLineItem) {
-            $singleTotal = $swLineItem->getPrice();
-            $singleNet = $singleTotal * 100 / (100 + $swLineItem->getTaxRate());
-            $singleVat = $singleTotal - $singleNet;
-            $quantity = $swLineItem->getQuantity();
-
-            $lineItem = new lineItem();
-            $lineItem->setName($swLineItem->getArticleName())
-                ->setReferenceId($swLineItem->getArticleNumber())
-                ->setSingleNet($singleNet)
-                ->setSingleVat($singleVat)
-                ->setAmount($singleTotal * $quantity)
-                ->setQuantity($quantity)
-                ->setCategory(isset($this->ivyMcc) ? $this->ivyMcc : '');
-            $articleDetail = $swLineItem->getArticleDetail();
-            if ($articleDetail) {
-                /** @var Image $image */
-                $image = $articleDetail->getImages()->first();
-                if (!$image) {
-                    $image = $articleDetail->getArticle()->getImages()->first();
-                }
-                if ($image) {
-                    $media = $image->getMedia();
-                    if ($media) {
-                        $thumbnailPath = (string)\array_values($media->getThumbnailFilePaths())[0];
-                        if ($thumbnailPath !== '') {
-                            $lineItem->setImage($this->mediaService->getUrl($thumbnailPath));
-                        }
-                    }
-                }
-            }
-            $ivyLineItems[] = $lineItem;
-        }
-        return $ivyLineItems;
     }
 
     /**
@@ -481,19 +439,60 @@ class IvyPaymentHelper
     }
 
     /**
-     * @param Order $order
+     * @param array $basket
+     * @param bool $skipShipping
      * @return price
      */
-    private function getPrice(Order $order)
+    public function getPriceFromCart(array $basket, $skipShipping = false)
     {
-        $price = new price();
-        $price->setTotalNet($order->getInvoiceAmountNet())
-            ->setVat($order->getInvoiceAmount() - $order->getInvoiceAmountNet())
-            ->setShipping($order->getInvoiceShipping())
-            ->setTotal($order->getInvoiceAmount())
-            ->setCurrency($order->getCurrency());
+        $shippingTotal = $basket['sShippingcostsWithTax'];
+        $shippingNet = $basket['sShippingcostsNet'];
+        $shippingVat = $shippingTotal - $shippingNet;
 
+        $total = $basket['sAmount'];
+        $vatTotal = $basket['sAmountTax'];
+        $totalNet = $total - $vatTotal - $shippingNet;
+        $vat = $vatTotal - $shippingVat;
+
+        if ($skipShipping) {
+            $total -= $shippingTotal;
+            $shippingTotal = 0;
+        }
+
+        $price = new price();
+        $price->setTotalNet($totalNet)
+            ->setVat($vat)
+            ->setTotal($total)
+            ->setShipping($shippingTotal)
+            ->setCurrency($basket['sCurrencyName']);
         return $price;
+    }
+
+    /**
+     * @param array $basket
+     * @return array
+     */
+    public function getLineItemFromCart(array $basket)
+    {
+        $ivyLineItems = [];
+        $ivyMcc = (string)$this->getIvyMcc();
+        foreach ($basket['content'] as $swLineItem) {
+            $lineItem = new lineItem();
+            $singleNet = $swLineItem['netprice'];
+            $singleTotal = $swLineItem['price'];
+            $singleVat = $singleTotal - $singleNet;
+            $quantity = $swLineItem['quantity'];
+            $lineItem->setName($swLineItem['articlename'])
+                ->setReferenceId($swLineItem['ordernumber'])
+                ->setCategory($ivyMcc)
+                ->setSingleNet($singleNet)
+                ->setSingleVat($singleVat)
+                ->setAmount($singleTotal * $quantity)
+                ->setQuantity($quantity);
+
+            $ivyLineItems[] = $lineItem;
+        }
+        return $ivyLineItems;
     }
 
     /**

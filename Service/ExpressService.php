@@ -441,28 +441,10 @@ class ExpressService
      */
     private function getSessionCreateDataFromBasket(array $basket, array $dispatch, array $country, $skipShipping)
     {
-        $shippingTotal = $basket['sShippingcostsWithTax'];
-        $shippingNet = $basket['sShippingcostsNet'];
-        $shippingVat = $shippingTotal - $shippingNet;
-
-        $total = $basket['sAmount'];
-        $vatTotal = $basket['sAmountTax'];
-        $totalNet = $total - $vatTotal - $shippingNet;
-        $vat = $vatTotal - $shippingVat;
-
-        if ($skipShipping) {
-            $total -= $shippingTotal;
-            $shippingTotal = 0;
-        }
         $ivyMcc = (string)$this->ivyHelper->getIvyMcc();
-        $price = new price();
-        $price->setTotalNet($totalNet)
-            ->setVat($vat)
-            ->setTotal($total)
-            ->setShipping($shippingTotal)
-            ->setCurrency($basket['sCurrencyName']);
+        $price = $this->ivyHelper->getPriceFromCart($basket, $skipShipping);
 
-        $ivyLineItems = $this->getLineItemFromCart($basket);
+        $ivyLineItems = $this->ivyHelper->getLineItemFromCart($basket);
         $shippingMethod = new shippingMethod();
         $shippingMethod
             ->setPrice($basket['sShippingcostsWithTax'])
@@ -475,33 +457,6 @@ class ExpressService
             ->setCategory($ivyMcc)
             ->addShippingMethod($shippingMethod);
         return $ivySessionData;
-    }
-
-    /**
-     * @param array $basket
-     * @return array
-     */
-    private function getLineItemFromCart(array $basket)
-    {
-        $ivyLineItems = [];
-        $ivyMcc = (string)$this->ivyHelper->getIvyMcc();
-        foreach ($basket['content'] as $swLineItem) {
-            $lineItem = new lineItem();
-            $singleNet = $swLineItem['netprice'];
-            $singleTotal = $swLineItem['price'];
-            $singleVat = $singleTotal - $singleNet;
-            $quantity = $swLineItem['quantity'];
-            $lineItem->setName($swLineItem['articlename'])
-                ->setReferenceId($swLineItem['ordernumber'])
-                ->setCategory($ivyMcc)
-                ->setSingleNet($singleNet)
-                ->setSingleVat($singleVat)
-                ->setAmount($singleTotal * $quantity)
-                ->setQuantity($quantity);
-
-            $ivyLineItems[] = $lineItem;
-        }
-        return $ivyLineItems;
     }
 
     /**

@@ -247,7 +247,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                 if (empty($contextToken)) {
                     throw new IvyException('sw-context-token not provided');
                 }
-                $this->logger->info('confirm payload is valid, start create order');
+                $this->logger->info('start create order');
 
                 $referenceId = isset($payload['referenceId']) ? $payload['referenceId'] : null;
                 /** @var IvyTransaction $ivyPaymentSession */
