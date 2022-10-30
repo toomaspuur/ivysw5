@@ -407,7 +407,7 @@ class IvyPaymentHelper
         if (isset($sOrderVariables['sUserData']['additional']['user']['email'])) {
             $email = $sOrderVariables['sUserData']['additional']['user']['email'];
         }
-        if (isset($sOrderVariables['sUserData']['additional']['user']['email'])) {
+        if (isset($sOrderVariables['sUserData']['billingaddress']['phone'])) {
             $phone = $sOrderVariables['sUserData']['billingaddress']['phone'];
         }
         if ($email || $phone) {
