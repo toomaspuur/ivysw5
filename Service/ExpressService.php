@@ -11,6 +11,7 @@ namespace IvyPaymentPlugin\Service;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
+use IvyPaymentPlugin\Components\CustomObjectNormalizer;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\lineItem;
 use IvyPaymentPlugin\IvyApi\sessionCreate;
@@ -95,7 +96,6 @@ class ExpressService
      * @param IvyPaymentHelper $ivyHelper
      * @param IvyApiClient $ivyApiClient
      * @param ModelManager $em
-     * @param \Shopware_Components_Config $shopwareConfig
      * @param FormFactoryInterface $formFactory
      * @param ContextServiceInterface $contextService
      * @param RegisterServiceInterface $registerService
@@ -117,7 +117,7 @@ class ExpressService
         $this->logger = $logger;
         $this->ivyHelper = $ivyHelper;
         $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $normalizers = [new ObjectNormalizer()];
+        $normalizers = [new CustomObjectNormalizer()];
         $this->serializer = new Serializer($normalizers, $encoders);
         $this->ivyApiClient = $ivyApiClient;
         $this->em = $em;
@@ -183,9 +183,6 @@ class ExpressService
         // add plugin version as string to know whether to redirect to confirmation page after ivy checkout
         $ivyExpressSessionData->setPlugin($this->ivyHelper->getVersion());
         $jsonContent = $this->serializer->serialize($ivyExpressSessionData, 'json');
-        $asArray = \json_decode($jsonContent, true);
-        unset($asArray['billingAddress'], $asArray['handshake']);
-        $jsonContent = \json_encode($asArray);
         $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
         if (empty($response['redirectUrl'])) {
             throw new IvyApiException('cannot obtain ivy redirect url');
