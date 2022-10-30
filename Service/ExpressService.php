@@ -13,7 +13,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\lineItem;
-use IvyPaymentPlugin\IvyApi\price;
 use IvyPaymentPlugin\IvyApi\sessionCreate;
 use IvyPaymentPlugin\IvyApi\shippingMethod;
 use IvyPaymentPlugin\IvyPaymentPlugin;
@@ -62,11 +61,6 @@ class ExpressService
     private $em;
 
     /**
-     * @var \Shopware_Components_Config
-     */
-    private $shopwareConfig;
-
-    /**
      * @var Connection
      */
     private $connection;
@@ -107,12 +101,12 @@ class ExpressService
      * @param RegisterServiceInterface $registerService
      * @param \Enlight_Controller_Front $front
      * @param IvyPaymentLogger $logger
+     * @throws Exception
      */
     public function __construct(
         IvyPaymentHelper $ivyHelper,
         IvyApiClient $ivyApiClient,
         ModelManager $em,
-        \Shopware_Components_Config $shopwareConfig,
         FormFactoryInterface $formFactory,
         ContextServiceInterface $contextService,
         RegisterServiceInterface $registerService,
@@ -128,7 +122,6 @@ class ExpressService
         $this->ivyApiClient = $ivyApiClient;
         $this->em = $em;
         $this->connection = $em->getConnection();
-        $this->shopwareConfig = $shopwareConfig;
         $this->formFactory = $formFactory;
         $this->contextService = $contextService;
         $this->registerService = $registerService;

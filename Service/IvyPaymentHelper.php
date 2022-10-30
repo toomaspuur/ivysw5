@@ -20,10 +20,7 @@ use IvyPaymentPlugin\IvyApi\shippingMethod;
 use IvyPaymentPlugin\Models\IvyTransaction;
 use Monolog\Logger;
 use Ramsey\Uuid\Uuid;
-use Shopware\Bundle\MediaBundle\MediaService;
-use Shopware\Models\Article\Image;
 use Shopware\Models\Country\Country;
-use Shopware\Models\Order\Detail;
 use Shopware\Models\Order\Order;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
@@ -65,11 +62,6 @@ class IvyPaymentHelper
     private $serializer;
 
     /**
-     * @var MediaService
-     */
-    private $mediaService;
-
-    /**
      * @var Logger
      */
     private $logger;
@@ -89,9 +81,19 @@ class IvyPaymentHelper
      */
     private $version;
 
+    /**
+     * @var IvyApiClient
+     */
+    private $ivyApiClient;
+
+    /**
+     * @param array $config
+     * @param IvyApiClient $ivyApiClient
+     * @param Logger $logger
+     */
     public function __construct(
         array $config,
-        MediaService $mediaService,
+        IvyApiClient $ivyApiClient,
         Logger $logger
     )
     {
@@ -116,9 +118,9 @@ class IvyPaymentHelper
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $normalizers = [new ObjectNormalizer()];
         $this->serializer = new Serializer($normalizers, $encoders);
-        $this->mediaService = $mediaService;
         $pluginName = Shopware()->Container()->getParameter('ivy_payment_plugin.plugin_name');
         $this->version = 'sw5' . Shopware()->Container()->get('dbal_connection')->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName])->fetchOne();
+        $this->ivyApiClient = $ivyApiClient;
     }
 
     /**
@@ -281,17 +283,8 @@ class IvyPaymentHelper
 
         $this->logger->debug('create ivy session: ' . $jsonContent);
 
-        $client = new Client();
-        $headers = [
-            'content-type' =>'application/json',
-            'X-Ivy-Api-Key' => $this->ivyApiKey,
-        ];
-        $options = [
-            'headers' => $headers,
-            'body' => $jsonContent,
-        ];
         try {
-            $response = $client->post($this->ivyServiceUrl . 'checkout/session/create', $options);
+            $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
             throw new IvyException('communication error: ' . $e->getMessage());
@@ -482,6 +475,7 @@ class IvyPaymentHelper
             $singleTotal = $swLineItem['price'];
             $singleVat = $singleTotal - $singleNet;
             $quantity = $swLineItem['quantity'];
+
             $lineItem->setName($swLineItem['articlename'])
                 ->setReferenceId($swLineItem['ordernumber'])
                 ->setCategory($ivyMcc)
@@ -490,6 +484,9 @@ class IvyPaymentHelper
                 ->setAmount($singleTotal * $quantity)
                 ->setQuantity($quantity);
 
+            if (isset($swLineItem['additional_details']['image']['source'])) {
+                $lineItem->setImage($swLineItem['additional_details']['image']['source']);
+            }
             $ivyLineItems[] = $lineItem;
         }
         return $ivyLineItems;

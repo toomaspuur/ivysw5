@@ -23,18 +23,30 @@ class IvyApiClient
     private $apiLogger;
 
     /**
-     * @var IvyPaymentHelper
+     * @var mixed|string
      */
-    private $ivyHelper;
+    private $ivyServiceUrl;
 
     /**
-     * @param IvyPaymentHelper $ivyHelper
+     * @var mixed
+     */
+    private $ivyApiKey;
+
+    /**
+     * @param array $config
      * @param Logger $apiLogger
      */
-    public function __construct(IvyPaymentHelper $ivyHelper, Logger $apiLogger)
+    public function __construct(array $config, Logger $apiLogger)
     {
         $this->apiLogger = $apiLogger;
-        $this->ivyHelper = $ivyHelper;
+        $isSandboxActive = (int)$config["isSandboxActive"] === 1;
+        if ($isSandboxActive) {
+            $this->ivyServiceUrl = isset($config["IvyApiUrlSandbox"]) ? $config["IvyApiUrlSandbox"] : IvyPaymentHelper::TEST_URL;
+            $this->ivyApiKey = $config["SandboxIvyApiKey"];
+        } else {
+            $this->ivyServiceUrl = IvyPaymentHelper::LIVE_URL;
+            $this->ivyApiKey = $config["IvyApiKey"];
+        }
     }
 
     /**
@@ -48,9 +60,9 @@ class IvyApiClient
         $this->apiLogger->info('send ' . $endpoint . ' ' . $jsonContent);
 
         $client = new Client([
-            'base_uri' => $this->ivyHelper->getIvyServiceUrl(),
+            'base_uri' => $this->ivyServiceUrl,
             'headers' => [
-                'X-Ivy-Api-Key' => $this->ivyHelper->getIvyApiKey(),
+                'X-Ivy-Api-Key' => $this->ivyApiKey,
             ],
         ]);
 
