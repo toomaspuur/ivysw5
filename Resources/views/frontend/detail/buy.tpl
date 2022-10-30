@@ -2,5 +2,9 @@
 
 {block name="frontend_detail_buy"}
     {$smarty.block.parent}
-    {include file="frontend/ivy_payment_plugin/button.tpl" iviPrice=$sArticle.price ivyAddToCart=true}
+    {include file="frontend/ivy_payment_plugin/button.tpl"
+        addDivClass='buybox--form'
+        addButtonClass='buybox--button'
+        iviPrice=$sArticle.price
+        ivyAddToCart=true}
 {/block}
