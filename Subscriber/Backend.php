@@ -12,18 +12,36 @@ namespace IvyPaymentPlugin\Subscriber;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
 use Enlight\Event\SubscriberInterface;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use IvyPaymentPlugin\Exception\IvyApiException;
 use IvyPaymentPlugin\Models\IvyTransaction;
+use IvyPaymentPlugin\Service\IvyApiClient;
 
 class Backend implements SubscriberInterface
 {
     private $viewDir;
 
     /**
+     * @var IvyApiClient
+     */
+    private $ivyApiClient;
+
+    /**
+     * @var \Enlight_Controller_Router
+     */
+    private $router;
+
+    /**
+     * @param IvyApiClient $ivyApiClient
+     * @param \Enlight_Controller_Router $router
      * @param string $viewDir
      */
-    public function __construct($viewDir)
+    public function __construct(IvyApiClient $ivyApiClient, \Enlight_Controller_Router $router, $viewDir)
     {
         $this->viewDir = $viewDir;
+        $this->ivyApiClient = $ivyApiClient;
+        $this->router = $router;
     }
 
     public static function getSubscribedEvents()
@@ -31,7 +49,35 @@ class Backend implements SubscriberInterface
         return [
             'Enlight_Controller_Action_PostDispatch_Backend_Order' => 'postDispatchOrder',
             'Shopware_Controllers_Backend_Order::deleteAction::before' => 'onDeleteAction',
+            'Shopware_Controllers_Backend_Config::saveFormAction::after' => 'afterSaveConfig'
         ];
+    }
+
+    /**
+     * @param \Enlight_Hook_HookArgs $args
+     * @return void
+     * @throws GuzzleException
+     * @throws IvyApiException
+     */
+    public function afterSaveConfig(\Enlight_Hook_HookArgs $args)
+    {
+        /** @var \Shopware_Controllers_Backend_Config $subject */
+        $subject = $args->getSubject();
+        $name = $subject->Request()->get('name');
+        if ($name !== 'IvyPaymentPlugin') {
+            return;
+        }
+
+        $jsonContent = \json_encode([
+            'quoteCallbackUrl' => $this->router->assemble(['module' => 'frontend', 'controller' => 'IvyExpress', 'action' => 'callback']),
+            'successCallbackUrl' => $this->router->assemble(['module' => 'frontend', 'controller' => 'IvyPayment', 'action' => 'success']),
+            'errorCallbackUrl' => $this->router->assemble(['module' => 'frontend', 'controller' => 'IvyPayment', 'action' => 'error']),
+            'completeCallbackUrl' => $this->router->assemble(['module' => 'frontend', 'controller' => 'IvyExpress', 'action' => 'confirm']),
+            'webhookUrl' => $this->router->assemble(['module' => 'frontend', 'controller' => 'IvyPayment', 'action' => 'notify']),
+            'privacyUrl' => $this->router->assemble(['module' => 'frontend', 'controller' => 'index', 'action' => 'index']) . '?sViewport=custom&sCustom=3',
+            'tosUrl' => $this->router->assemble(['module' => 'frontend', 'controller' => 'index', 'action' => 'index']) . '?sViewport=custom&sCustom=4',
+        ]);
+        $this->ivyApiClient->sendApiRequest('merchant/update', $jsonContent);
     }
 
     /**

@@ -13,6 +13,8 @@
         </service>
 
         <service class="IvyPaymentPlugin\Subscriber\Backend" id="ivy_payment_plugin.subscriber.backend">
+            <argument type="service" id="ivy_api_client"/>
+            <argument type="service" id="router"/>
             <argument type="string">%ivy_payment_plugin.view_dir%</argument>
             <tag name="shopware.event_subscriber"/>
         </service>

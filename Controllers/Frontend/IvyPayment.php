@@ -9,6 +9,7 @@
 
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
+use IvyPaymentPlugin\Components\IvyJsonResponse;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\Models\IvyTransaction;
 use IvyPaymentPlugin\Service\IvyPaymentHelper;
@@ -46,11 +47,16 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
     private $logger;
 
     /**
+     * @var mixed|object|\Symfony\Component\DependencyInjection\Container|null
+     */
+    private $expressService;
+
+    /**
      * @return string[]
      */
     public function getWhitelistedCSRFActions()
     {
-        return ['notify'];
+        return ['notify', 'express'];
     }
 
     /**
@@ -64,6 +70,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
         $this->router = $this->Front()->Router();
         $this->ivyHelper = $this->container->get('ivy_payment_helper');
         $this->logger = $this->ivyHelper->getLogger();
+        $this->expressService = $this->container->get('ivy_express_service');
     }
 
     /**
@@ -119,7 +126,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
 
             $transaction->setUpdated(new \DateTime());
             $transaction->setAmount($amount);
-            $transaction->setAppId($ivySessionId);
+            $transaction->setAppId($ivySession['appId']);
             $transaction->setIvySessionId($ivySession['id']);
             $transaction->setSwPaymentToken($swPaymentToken);
             $transaction->setCreated(new \DateTime((string)$ivySession['createdAt']));
@@ -159,6 +166,96 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
 
     /**
      * @return void
+     * @throws Exception
+     */
+    public function expressAction()
+    {
+        $this->logger = $this->expressService->getLogger();
+        $this->logger->info('express checkout confirm');
+        $request = $this->Request();
+        $outputData = [];
+        $error = null;
+        try {
+            if ('ivy_payment' !== $this->getPaymentShortName()) {
+                throw new IvyException('invalid payment method selected ' . $this->getPaymentShortName());
+            }
+            $signature = $request->get('_sw_payment_token');
+            $basket = $this->loadBasketFromSignature($signature);
+            $this->verifyBasketSignature($signature, $basket);
+
+            $referenceId = $this->request->get('referenceId');
+
+            /** @var IvyTransaction $ivyPaymentSession */
+            $ivyPaymentSession = $this->em
+                ->getRepository(IvyTransaction::class)
+                ->findOneBy(['reference' => $referenceId]);
+            if ($ivyPaymentSession === null) {
+                throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
+            }
+
+            $orderNumber = (string)$this->saveOrder(
+                $ivyPaymentSession->getIvySessionId(),
+                $referenceId,
+                Status::PAYMENT_STATE_OPEN
+            );
+
+            if ($orderNumber === '') {
+                throw new IvyException('can not save order');
+            }
+            $this->logger->info('created  order with number ' . $orderNumber);
+
+            $order = $this->em->getRepository(Order::class)
+                ->findOneBy(['number' => $orderNumber]);
+            if (!$order instanceof Order) {
+                throw new IvyException('can not load saved order');
+            }
+
+            $ivyPaymentSession->setStatus(IvyTransaction::PAYMENT_STATUS_PROCESSING);
+            $ivyPaymentSession->setUpdated(new \DateTime());
+            $ivyPaymentSession->setOrder($order);
+            $this->em->flush($ivyPaymentSession);
+
+            $outputData = [
+                'redirectUrl' => $this->router->assemble(['controller' => 'checkout', 'action' => 'finish']),
+                'metadata' => [
+                    '_sw_payment_token' => $signature,
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            $this->logger->error($e->getMessage());
+            $this->logger->error($e->getTraceAsString());
+            $error = $e->getMessage();
+        }
+
+        if ($error) {
+            $outputData['error'] = $error;
+        }
+
+        $this->logger->info('send proxy response');
+
+        \ini_set('serialize_precision', '3');
+        $response = new IvyJsonResponse($outputData);
+        $response->send();
+        $this->get('kernel')->terminate($this->request, $response);
+        exit(0);
+    }
+
+    /**
+     * @return array|mixed
+     */
+    private function getPayload()
+    {
+        $payload = $this->request->request->all();
+        if (empty($payload) && !empty((string)$this->request->getContent())) {
+            $payload = \json_decode((string)$this->request->getContent(), true);
+        }
+        $this->logger->debug('payload: ' . \print_r($payload, true));
+        return $payload;
+    }
+
+    /**
+     * @return void
      * @throws ORMException
      * @throws OptimisticLockException
      * @throws Exception
@@ -179,13 +276,20 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $this->verifyBasketSignature($signature, $basket);
         } catch (\Exception $e) {
             $this->logger->error('successAction verify error');
+            $this->logger->error($e->getMessage());
             $this->redirect(['controller' => 'IvyPayment', 'action' => 'error']);
+            return;
         }
 
         $transaction = Shopware()->Models()
             ->getRepository(IvyTransaction::class)
             ->findOneBy(['swPaymentToken' => $signature]);
 
+        if (!$transaction instanceof IvyTransaction) {
+            $this->logger->error('transaction with _sw_payment_token ' . $signature . ' not found');
+            $this->redirect(['controller' => 'IvyPayment', 'action' => 'error']);
+            return;
+        }
         $status = IvyTransaction::STATUS_AUTH;
         $transaction->setStatus($status);
         $transaction->setUpdated(new \DateTime());
@@ -205,18 +309,22 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
      * @return void
      * @throws ORMException
      * @throws OptimisticLockException
-     * @throws IvyException
+     * @throws IvyException|Exception
      */
     public function errorAction()
     {
-        $orderId = $this->ivyHelper->getCurrentTemporaryOrder()->getId();
-        $transaction = $this->em
-            ->getRepository(IvyTransaction::class)
-            ->findOneBy(['orderId' => $orderId]);
-        if ($transaction) {
-            $transaction->setStatus(IvyTransaction::STATUS_FAILED);
-            $transaction->setUpdated(new \DateTime());
-            $this->em->flush($transaction);
+        try {
+            $orderId = $this->ivyHelper->getCurrentTemporaryOrder()->getId();
+            $transaction = $this->em
+                ->getRepository(IvyTransaction::class)
+                ->findOneBy(['orderId' => $orderId]);
+            if ($transaction) {
+                $transaction->setStatus(IvyTransaction::STATUS_FAILED);
+                $transaction->setUpdated(new \DateTime());
+                $this->em->flush($transaction);
+            }
+        } catch (\Exception $e) {
+            $this->logger->error($e->getMessage());
         }
         $this->logger->error('payment error, redirect to checkout');
         $this->redirect(['controller' => 'checkout', 'action' => 'confirm']);

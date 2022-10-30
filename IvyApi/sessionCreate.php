@@ -29,6 +29,12 @@ class sessionCreate
     private $verificationToken = '';
     /** @var array|null */
     private $metadata;
+    /** @var bool */
+    private $express = false;
+    /** @var string */
+    private $plugin;
+    /** @var bool */
+    private $handshake = false;
 
     /**
      * @param string $referenceId
@@ -202,4 +208,60 @@ class sessionCreate
     {
         return $this->metadata;
     }
+
+    /**
+     * @return bool
+     */
+    public function isExpress()
+    {
+        return $this->express;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getPlugin()
+    {
+        return $this->plugin;
+    }
+
+    /**
+     * @param bool $express
+     * @return sessionCreate
+     */
+    public function setExpress($express)
+    {
+        $this->express = $express;
+        return $this;
+    }
+
+    /**
+     * @param string $plugin
+     * @return sessionCreate
+     */
+    public function setPlugin($plugin)
+    {
+        $this->plugin = $plugin;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isHandshake()
+    {
+        return $this->handshake;
+    }
+
+    /**
+     * @param bool $handshake
+     * @return sessionCreate
+     */
+    public function setHandshake($handshake)
+    {
+        $this->handshake = $handshake;
+        return $this;
+    }
+
 }

@@ -34,6 +34,7 @@ use Doctrine\ORM\Tools\SchemaTool;
 class IvyPaymentPlugin extends Plugin
 {
     const IVY_PAYMENT_NAME = 'ivy_payment';
+    const SALUTATION_NA = 'not_specified';
 
     private $translations = [
         'de_DE' => [
@@ -53,6 +54,7 @@ class IvyPaymentPlugin extends Plugin
         parent::install($context);
         $this->manageSchema();
         $this->managePayments($context);
+        $this->setDefaults();
     }
 
     /**
@@ -65,7 +67,37 @@ class IvyPaymentPlugin extends Plugin
         $this->manageSchema();
         $this->managePayments($context);
         $context->scheduleClearCache(InstallContext::CACHE_LIST_ALL);
+        $this->setDefaults();
         return true;
+    }
+
+    private function setDefaults()
+    {
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'logLevel', 'value' => 's:3:"400";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'isSandboxActive', 'value' => 's:1:"0";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'checkoutTitle', 'value' => 's:1:"0";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'checkoutSubTitle', 'value' => 's:1:"1";']);
+        Shopware()->Db()->executeQuery(
+            'UPDATE s_core_config_elements e LEFT JOIN s_core_config_forms f on f.id = e.form_id
+            SET e.value = :value
+            WHERE f.name = :name AND e.name = :ename',
+            ['name' => $this->getName(), 'ename' => 'checkoutBanner', 'value' => 's:1:"1";']);
     }
 
     /**
@@ -105,8 +137,8 @@ class IvyPaymentPlugin extends Plugin
     }
 
     /**
-    * @param ContainerBuilder $container
-    */
+     * @param ContainerBuilder $container
+     */
     public function build(ContainerBuilder $container)
     {
         $container->setParameter('ivy_payment_plugin.plugin_dir', $this->getPath());
@@ -120,6 +152,15 @@ class IvyPaymentPlugin extends Plugin
      */
     private function managePayments(InstallContext $context)
     {
+        /** @var \Shopware\Components\ConfigWriter $config */
+        $config = $this->container->get('Shopware\Components\ConfigWriter');
+        $salutations = explode(',', $config->get('shopsalutations'));
+        if (!\in_array(self::SALUTATION_NA, $salutations, true)) {
+            $salutations[] = self::SALUTATION_NA;
+            $salutations = \implode(',', $salutations);
+            $config->save('shopsalutations', $salutations);
+        }
+
         $em = Shopware()->Models();
         $mainShop = $em->getRepository(Shop::class)->findOneBy(['id' => 1]);
         $mainLocale = $mainShop->getLocale()->toString();
@@ -133,6 +174,7 @@ class IvyPaymentPlugin extends Plugin
             'action'                => 'IvyPayment',
             'position'              => 0,
             'active'                => 1,
+            'esdactive'             => 1,
             'additionalDescription' => '<img class="ivy-payment-logo" src="{link file=\'frontend/public/src/img/ivy.png\' fullPath}" alt="Ivy">',
 
         ];
