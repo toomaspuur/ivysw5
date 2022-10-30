@@ -11,10 +11,12 @@ namespace IvyPaymentPlugin\Service;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use IvyPaymentPlugin\Components\CustomObjectNormalizer;
 use IvyPaymentPlugin\Exception\IvyApiException;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\address;
 use IvyPaymentPlugin\IvyApi\lineItem;
+use IvyPaymentPlugin\IvyApi\prefill;
 use IvyPaymentPlugin\IvyApi\price;
 use IvyPaymentPlugin\IvyApi\sessionCreate;
 use IvyPaymentPlugin\IvyApi\shippingMethod;
@@ -117,7 +119,7 @@ class IvyPaymentHelper
         $this->ivyMcc = self::MCC_DEFAULT;;
 
         $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $normalizers = [new ObjectNormalizer()];
+        $normalizers = [new CustomObjectNormalizer()];
         $this->serializer = new Serializer($normalizers, $encoders);
         $pluginName = Shopware()->Container()->getParameter('ivy_payment_plugin.plugin_name');
         $this->version = 'sw5' . Shopware()->Container()->get('dbal_connection')->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName])->fetchOne();
@@ -268,7 +270,6 @@ class IvyPaymentHelper
      * @param $swPaymentToken
      * @return mixed
      * @throws IvyException
-     * @throws GuzzleException
      */
     public function createIvySession(Order $order, $swPaymentToken)
     {
@@ -402,6 +403,16 @@ class IvyPaymentHelper
             ->setCategory(isset($this->ivyMcc) ? $this->ivyMcc : '')
             ->setReferenceId(Uuid::uuid4()->toString())
             ->setPlugin($this->getVersion());
+        $email = $phone = null;
+        if (isset($sOrderVariables['sUserData']['additional']['user']['email'])) {
+            $email = $sOrderVariables['sUserData']['additional']['user']['email'];
+        }
+        if (isset($sOrderVariables['sUserData']['billingaddress']['phone'])) {
+            $phone = $sOrderVariables['sUserData']['billingaddress']['phone'];
+        }
+        if ($email || $phone) {
+            $data->setPrefill(new prefill($email, $phone));
+        }
         return $data;
     }
 

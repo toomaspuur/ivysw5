@@ -34,7 +34,9 @@ class sessionCreate
     /** @var string */
     private $plugin;
     /** @var bool */
-    private $handshake = false;
+    private $handshake;
+    /** @var prefill */
+    private $prefill;
 
     /**
      * @param string $referenceId
@@ -261,6 +263,24 @@ class sessionCreate
     public function setHandshake($handshake)
     {
         $this->handshake = $handshake;
+        return $this;
+    }
+
+    /**
+     * @return prefill
+     */
+    public function getPrefill()
+    {
+        return $this->prefill;
+    }
+
+    /**
+     * @param prefill $prefill
+     * @return sessionCreate
+     */
+    public function setPrefill($prefill)
+    {
+        $this->prefill = $prefill;
         return $this;
     }
 
