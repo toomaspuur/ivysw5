@@ -86,6 +86,11 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
         $this->expressService = $this->container->get('ivy_express_service');
         $this->ivyHelper = $this->expressService->getIvyHelper();
         $this->logger = $this->expressService->getLogger();
+        if ($this->session->offsetExists('IvyNotExpressCheckout') ) {
+            $this->logger = $this->logger->withName('normal');
+        } else {
+            $this->logger = $this->logger->withName('express');
+        }
     }
 
     /**
@@ -242,7 +247,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                 if (empty($contextToken)) {
                     throw new IvyException('sw-context-token not provided');
                 }
-                $this->logger->info('confirm payload is valid, start create order');
+                $this->logger->info('start create order');
 
                 $referenceId = isset($payload['referenceId']) ? $payload['referenceId'] : null;
                 /** @var IvyTransaction $ivyPaymentSession */
@@ -251,22 +256,25 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                     throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
                 }
 
-                $this->expressService->updateUser($payload);
+                if ($ivyPaymentSession->isExpress()) {
+                    $this->expressService->updateUser($payload);
+                    // reload user data in controller
+                    $this->View()->assign('sUserData', $this->getUserData());
 
-                // reload user data in controller
-                $this->View()->assign('sUserData', $this->getUserData());
-
-                $paymentId = $this->expressService->getPaymentId();
-                $shippingMethod = $payload['shippingMethod'];
-                $this->logger->info('set shipping method:  ' . \print_r($shippingMethod, true));
-                $shippingMethodId = $shippingMethod['reference'];
-                $this->setDispatch($shippingMethodId, $paymentId);
-                $this->get(ContextServiceInterface::class)->initializeShopContext();
-
-                $this->expressService->validateConfirmPayload($payload, $this->getBasket());
-                $this->logger->info('confrim payload is valid');
-
-                parent::confirmAction();
+                    $paymentId = $this->expressService->getPaymentId();
+                    $shippingMethod = $payload['shippingMethod'];
+                    $this->logger->info('set shipping method:  ' . \print_r($shippingMethod, true));
+                    $shippingMethodId = $shippingMethod['reference'];
+                    $this->setDispatch($shippingMethodId, $paymentId);
+                    $this->get(ContextServiceInterface::class)->initializeShopContext();
+                    $this->expressService->validateConfirmPayload($payload, $this->getBasket());
+                    $this->logger->info('confrim payload is valid');
+                    parent::confirmAction();
+                } else {
+                    parent::confirmAction();
+                    $this->expressService->validateConfirmPayload($payload, $this->getBasket());
+                    $this->logger->info('confrim payload is valid');
+                }
 
                 $signature = $this->persistBasket();
                 Shopware()->Session()->set('signature', $signature);

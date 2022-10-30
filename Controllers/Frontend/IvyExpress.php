@@ -69,6 +69,9 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
         $storeProxy = $this->container->get('ivy_store_proxy');
         $this->logger = $this->expressService->getLogger();
         if ($this->request->getActionName() !== 'start' && $this->request->getActionName() !== 'refresh' ) {
+            if ($this->session->offsetExists('IvyNotExpressCheckout') ) {
+                $this->logger = $this->logger->withName('normal');
+            }
             $referenceId = $this->request->get('reference');
             if ($referenceId === null) {
                 $payload = \json_decode($this->request->getContent(), true);
@@ -112,7 +115,6 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
      */
     public function startAction()
     {
-        $this->logger->info('-- create new express session');
         $data = [];
         try {
             $isExpress = $this->Request()->get('express', true);
@@ -121,13 +123,16 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $dispatch = $this->getSelectedDispatch();
             $country = $this->getSelectedCountry();
             if ($isExpress) {
+                $this->session->offsetUnset('IvyNotExpressCheckout');
+                $this->logger->info('-- create new express ivy session');
                 $ivySession = $this->expressService->createExpressSession($basket, $dispatch, $country);
             } else {
+                $this->session->set('IvyNotExpressCheckout', true);
+                $this->logger->info('-- create new ivy session');
                 $order = $this->ivyHelper->getCurrentTemporaryOrder();
                 if ($order) {
                     $swPaymentToken = $this->persistBasket();
                     $ivySession = $this->ivyHelper->createIvySession($order, $swPaymentToken);
-                    $ivySession['handshake'] = true;
                 } else {
                     throw new IvyException('temporary order not found');
                 }
@@ -174,6 +179,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $transaction->setStatus(IvyTransaction::STATUS_CREATED);
             $transaction->setReference($referenceId);
             $transaction->setSwContextToken($swContexToken);
+            $transaction->setExpress($isExpress);
             if (!$isExpress && isset($swPaymentToken)) {
                 $transaction->setSwPaymentToken($swPaymentToken);
             }

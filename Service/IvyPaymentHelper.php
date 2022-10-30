@@ -10,6 +10,8 @@
 namespace IvyPaymentPlugin\Service;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use IvyPaymentPlugin\Exception\IvyApiException;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\address;
 use IvyPaymentPlugin\IvyApi\lineItem;
@@ -19,10 +21,7 @@ use IvyPaymentPlugin\IvyApi\shippingMethod;
 use IvyPaymentPlugin\Models\IvyTransaction;
 use Monolog\Logger;
 use Ramsey\Uuid\Uuid;
-use Shopware\Bundle\MediaBundle\MediaService;
-use Shopware\Models\Article\Image;
 use Shopware\Models\Country\Country;
-use Shopware\Models\Order\Detail;
 use Shopware\Models\Order\Order;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
@@ -64,11 +63,6 @@ class IvyPaymentHelper
     private $serializer;
 
     /**
-     * @var MediaService
-     */
-    private $mediaService;
-
-    /**
      * @var Logger
      */
     private $logger;
@@ -88,9 +82,19 @@ class IvyPaymentHelper
      */
     private $version;
 
+    /**
+     * @var IvyApiClient
+     */
+    private $ivyApiClient;
+
+    /**
+     * @param array $config
+     * @param IvyApiClient $ivyApiClient
+     * @param Logger $logger
+     */
     public function __construct(
         array $config,
-        MediaService $mediaService,
+        IvyApiClient $ivyApiClient,
         Logger $logger
     )
     {
@@ -115,9 +119,9 @@ class IvyPaymentHelper
         $encoders = [new XmlEncoder(), new JsonEncoder()];
         $normalizers = [new ObjectNormalizer()];
         $this->serializer = new Serializer($normalizers, $encoders);
-        $this->mediaService = $mediaService;
         $pluginName = Shopware()->Container()->getParameter('ivy_payment_plugin.plugin_name');
         $this->version = 'sw5' . Shopware()->Container()->get('dbal_connection')->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName])->fetchOne();
+        $this->ivyApiClient = $ivyApiClient;
     }
 
     /**
@@ -261,48 +265,37 @@ class IvyPaymentHelper
 
     /**
      * @param Order $order
-     * @param string $swPaymentToken
+     * @param $swPaymentToken
      * @return mixed
      * @throws IvyException
+     * @throws GuzzleException
      */
     public function createIvySession(Order $order, $swPaymentToken)
     {
         $data = $this->getSessionCreateDataFromOrder($order);
-        $data->setMetadata(['_sw_payment_token' => $swPaymentToken]);
+        $data->setMetadata([
+            '_sw_payment_token' => $swPaymentToken,
+            'sw-context-token' => Shopware()->Session()->getId(),
+            ]);
         $data->setVerificationToken($swPaymentToken);
+        $data->setHandshake(true);
 
         $jsonContent = $this->serializer->serialize($data, 'json');
 
         $this->logger->debug('create ivy session: ' . $jsonContent);
 
-        $client = new Client();
-        $headers = [
-            'content-type' =>'application/json',
-            'X-Ivy-Api-Key' => $this->ivyApiKey,
-        ];
-        $options = [
-            'headers' => $headers,
-            'body' => $jsonContent,
-        ];
-        try {
-            $response = $client->post($this->ivyServiceUrl . 'checkout/session/create', $options);
-        } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
-            throw new IvyException('communication error: ' . $e->getMessage());
+        $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
+        if (empty($response['redirectUrl'])) {
+            throw new IvyApiException('cannot obtain ivy redirect url');
         }
-
-
-        if ($response->getStatusCode() === 200) {
-            return \json_decode((string)$response->getBody(), true);
-        }
-        throw new IvyException('can not create ivy session: ' . $response->getStatusCode() . ' ' . $response->getBody());
+        return $response;
     }
 
     /**
      * @param IvyTransaction $transaction
      * @param float $amount
      * @return mixed
-     * @throws IvyException
+     * @throws IvyException|GuzzleException
      */
     public function refund(IvyTransaction $transaction, $amount)
     {
@@ -345,6 +338,7 @@ class IvyPaymentHelper
     /**
      * @param IvyTransaction $transaction
      * @return mixed|void
+     * @throws GuzzleException
      */
     public function updateOrder(IvyTransaction $transaction)
     {
@@ -394,9 +388,11 @@ class IvyPaymentHelper
     public function getSessionCreateDataFromOrder(Order $order)
     {
         $sOrderVariables = Shopware()->Session()->get('sOrderVariables');
-        $ivyLineItems = $this->getLineItems($order);
+        $sBasket = $sOrderVariables['sBasket'];
+
+        $ivyLineItems = $this->getLineItemFromCart($sBasket);
         $billingAddress = $this->getBillingAddress($sOrderVariables);
-        $price = $this->getPrice($order);
+        $price = $this->getPriceFromCart($sBasket, false);
         $shippingMethod = $this->getShippingMethod($order, $sOrderVariables);
         $data = new sessionCreate();
         $data->setPrice($price)
@@ -407,45 +403,6 @@ class IvyPaymentHelper
             ->setReferenceId(Uuid::uuid4()->toString())
             ->setPlugin($this->getVersion());
         return $data;
-    }
-
-    /**
-     * @param Order $order
-     * @return array
-     */
-    private function getLineItems(Order $order)
-    {
-        $ivyLineItems = array();
-        /** @var Detail $swLineItems */
-        foreach ($order->getDetails() as $swLineItem) {
-            $lineItem = new lineItem();
-            $lineItem->setName($swLineItem->getArticleName())
-                ->setReferenceId($swLineItem->getArticleNumber())
-                ->setSingleNet($swLineItem->getPrice())
-                ->setSingleVat($swLineItem->getTaxRate())
-                ->setAmount($swLineItem->getPrice())
-                ->setQuantity($swLineItem->getQuantity())
-                ->setCategory(isset($this->ivyMcc) ? $this->ivyMcc : '');
-            $articleDetail = $swLineItem->getArticleDetail();
-            if ($articleDetail) {
-                /** @var Image $image */
-                $image = $articleDetail->getImages()->first();
-                if (!$image) {
-                    $image = $articleDetail->getArticle()->getImages()->first();
-                }
-                if ($image) {
-                    $media = $image->getMedia();
-                    if ($media) {
-                        $thumbnailPath = (string)\array_values($media->getThumbnailFilePaths())[0];
-                        if ($thumbnailPath !== '') {
-                            $lineItem->setImage($this->mediaService->getUrl($thumbnailPath));
-                        }
-                    }
-                }
-            }
-            $ivyLineItems[] = $lineItem;
-        }
-        return $ivyLineItems;
     }
 
     /**
@@ -470,19 +427,64 @@ class IvyPaymentHelper
     }
 
     /**
-     * @param Order $order
+     * @param array $basket
+     * @param bool $skipShipping
      * @return price
      */
-    private function getPrice(Order $order)
+    public function getPriceFromCart(array $basket, $skipShipping = false)
     {
-        $price = new price();
-        $price->setTotalNet($order->getInvoiceAmountNet())
-            ->setVat($order->getInvoiceAmount() - $order->getInvoiceAmountNet())
-            ->setShipping($order->getInvoiceShipping())
-            ->setTotal($order->getInvoiceAmount())
-            ->setCurrency($order->getCurrency());
+        $shippingTotal = $basket['sShippingcostsWithTax'];
+        $shippingNet = $basket['sShippingcostsNet'];
+        $shippingVat = $shippingTotal - $shippingNet;
 
+        $total = $basket['sAmount'];
+        $vatTotal = $basket['sAmountTax'];
+        $totalNet = $total - $vatTotal - $shippingNet;
+        $vat = $vatTotal - $shippingVat;
+
+        if ($skipShipping) {
+            $total -= $shippingTotal;
+            $shippingTotal = 0;
+        }
+
+        $price = new price();
+        $price->setTotalNet($totalNet)
+            ->setVat($vat)
+            ->setTotal($total)
+            ->setShipping($shippingTotal)
+            ->setCurrency($basket['sCurrencyName']);
         return $price;
+    }
+
+    /**
+     * @param array $basket
+     * @return array
+     */
+    public function getLineItemFromCart(array $basket)
+    {
+        $ivyLineItems = [];
+        $ivyMcc = (string)$this->getIvyMcc();
+        foreach ($basket['content'] as $swLineItem) {
+            $lineItem = new lineItem();
+            $singleNet = $swLineItem['netprice'];
+            $singleTotal = $swLineItem['price'];
+            $singleVat = $singleTotal - $singleNet;
+            $quantity = $swLineItem['quantity'];
+
+            $lineItem->setName($swLineItem['articlename'])
+                ->setReferenceId($swLineItem['ordernumber'])
+                ->setCategory($ivyMcc)
+                ->setSingleNet($singleNet)
+                ->setSingleVat($singleVat)
+                ->setAmount($singleTotal * $quantity)
+                ->setQuantity($quantity);
+
+            if (isset($swLineItem['additional_details']['image']['source'])) {
+                $lineItem->setImage($swLineItem['additional_details']['image']['source']);
+            }
+            $ivyLineItems[] = $lineItem;
+        }
+        return $ivyLineItems;
     }
 
     /**

@@ -13,7 +13,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\lineItem;
-use IvyPaymentPlugin\IvyApi\price;
 use IvyPaymentPlugin\IvyApi\sessionCreate;
 use IvyPaymentPlugin\IvyApi\shippingMethod;
 use IvyPaymentPlugin\IvyPaymentPlugin;
@@ -62,11 +61,6 @@ class ExpressService
     private $em;
 
     /**
-     * @var \Shopware_Components_Config
-     */
-    private $shopwareConfig;
-
-    /**
      * @var Connection
      */
     private $connection;
@@ -107,12 +101,12 @@ class ExpressService
      * @param RegisterServiceInterface $registerService
      * @param \Enlight_Controller_Front $front
      * @param IvyPaymentLogger $logger
+     * @throws Exception
      */
     public function __construct(
         IvyPaymentHelper $ivyHelper,
         IvyApiClient $ivyApiClient,
         ModelManager $em,
-        \Shopware_Components_Config $shopwareConfig,
         FormFactoryInterface $formFactory,
         ContextServiceInterface $contextService,
         RegisterServiceInterface $registerService,
@@ -128,7 +122,6 @@ class ExpressService
         $this->ivyApiClient = $ivyApiClient;
         $this->em = $em;
         $this->connection = $em->getConnection();
-        $this->shopwareConfig = $shopwareConfig;
         $this->formFactory = $formFactory;
         $this->contextService = $contextService;
         $this->registerService = $registerService;
@@ -191,7 +184,7 @@ class ExpressService
         $ivyExpressSessionData->setPlugin($this->ivyHelper->getVersion());
         $jsonContent = $this->serializer->serialize($ivyExpressSessionData, 'json');
         $asArray = \json_decode($jsonContent, true);
-        unset($asArray['billingAddress']);
+        unset($asArray['billingAddress'], $asArray['handshake']);
         $jsonContent = \json_encode($asArray);
         $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
         if (empty($response['redirectUrl'])) {
@@ -441,28 +434,10 @@ class ExpressService
      */
     private function getSessionCreateDataFromBasket(array $basket, array $dispatch, array $country, $skipShipping)
     {
-        $shippingTotal = $basket['sShippingcostsWithTax'];
-        $shippingNet = $basket['sShippingcostsNet'];
-        $shippingVat = $shippingTotal - $shippingNet;
-
-        $total = $basket['sAmount'];
-        $vatTotal = $basket['sAmountTax'];
-        $totalNet = $total - $vatTotal - $shippingNet;
-        $vat = $vatTotal - $shippingVat;
-
-        if ($skipShipping) {
-            $total -= $shippingTotal;
-            $shippingTotal = 0;
-        }
         $ivyMcc = (string)$this->ivyHelper->getIvyMcc();
-        $price = new price();
-        $price->setTotalNet($totalNet)
-            ->setVat($vat)
-            ->setTotal($total)
-            ->setShipping($shippingTotal)
-            ->setCurrency($basket['sCurrencyName']);
+        $price = $this->ivyHelper->getPriceFromCart($basket, $skipShipping);
 
-        $ivyLineItems = $this->getLineItemFromCart($basket);
+        $ivyLineItems = $this->ivyHelper->getLineItemFromCart($basket);
         $shippingMethod = new shippingMethod();
         $shippingMethod
             ->setPrice($basket['sShippingcostsWithTax'])
@@ -475,33 +450,6 @@ class ExpressService
             ->setCategory($ivyMcc)
             ->addShippingMethod($shippingMethod);
         return $ivySessionData;
-    }
-
-    /**
-     * @param array $basket
-     * @return array
-     */
-    private function getLineItemFromCart(array $basket)
-    {
-        $ivyLineItems = [];
-        $ivyMcc = (string)$this->ivyHelper->getIvyMcc();
-        foreach ($basket['content'] as $swLineItem) {
-            $lineItem = new lineItem();
-            $singleNet = $swLineItem['netprice'];
-            $singleTotal = $swLineItem['price'];
-            $singleVat = $singleTotal - $singleNet;
-            $quantity = $swLineItem['quantity'];
-            $lineItem->setName($swLineItem['articlename'])
-                ->setReferenceId($swLineItem['articleID'])
-                ->setCategory($ivyMcc)
-                ->setSingleNet($singleNet)
-                ->setSingleVat($singleVat)
-                ->setAmount($singleTotal * $quantity)
-                ->setQuantity($quantity);
-
-            $ivyLineItems[] = $lineItem;
-        }
-        return $ivyLineItems;
     }
 
     /**
@@ -550,8 +498,8 @@ class ExpressService
             if ($lineItem['articlename'] !== $payloadLineItem['name']) {
                 $violations[] = '$payloadLineItem["name"] is ' . $payloadLineItem["name"] . ' waited ' . $lineItem['articlename'];
             }
-            if ($lineItem['articleID'] !== $payloadLineItem['referenceId']) {
-                $violations[] = '$payloadLineItem["referenceId"] is ' . $payloadLineItem["referenceId"] . ' waited ' . $lineItem['articleID'];
+            if ($lineItem['ordernumber'] !== $payloadLineItem['referenceId']) {
+                $violations[] = '$payloadLineItem["referenceId"] is ' . $payloadLineItem["referenceId"] . ' waited ' . $lineItem['ordernumber'];
             }
 
             $singleNet = $lineItem['netprice'];
