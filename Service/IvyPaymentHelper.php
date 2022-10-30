@@ -284,7 +284,7 @@ class IvyPaymentHelper
         $jsonContent = $this->serializer->serialize($data, 'json');
 
         $this->logger->debug('create ivy session: ' . $jsonContent);
-var_dump($jsonContent);die;
+
         $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
         if (empty($response['redirectUrl'])) {
             throw new IvyApiException('cannot obtain ivy redirect url');
