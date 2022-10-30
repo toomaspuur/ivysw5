@@ -13,6 +13,11 @@
 
     <compatibility minVersion="5.5.0" />
 
+    <changelog version="0.6.7">
+        <changes lang="de">Popup Checkout mit Handshake</changes>
+        <changes lang="en">Popup checkout with handshake</changes>
+    </changelog>
+
     <changelog version="0.6.0">
         <changes lang="de">Ivy Express Checkout</changes>
         <changes lang="en">Ivy Express Checkout</changes>

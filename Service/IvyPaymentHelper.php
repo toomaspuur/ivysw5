@@ -295,7 +295,7 @@ class IvyPaymentHelper
      * @param IvyTransaction $transaction
      * @param float $amount
      * @return mixed
-     * @throws IvyException
+     * @throws IvyException|GuzzleException
      */
     public function refund(IvyTransaction $transaction, $amount)
     {
