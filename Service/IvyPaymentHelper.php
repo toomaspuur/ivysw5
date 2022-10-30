@@ -11,6 +11,7 @@ namespace IvyPaymentPlugin\Service;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use IvyPaymentPlugin\Exception\IvyApiException;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\address;
 use IvyPaymentPlugin\IvyApi\lineItem;
@@ -283,18 +284,11 @@ class IvyPaymentHelper
 
         $this->logger->debug('create ivy session: ' . $jsonContent);
 
-        try {
-            $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
-        } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
-            throw new IvyException('communication error: ' . $e->getMessage());
+        $response = $this->ivyApiClient->sendApiRequest('checkout/session/create', $jsonContent);
+        if (empty($response['redirectUrl'])) {
+            throw new IvyApiException('cannot obtain ivy redirect url');
         }
-
-
-        if ($response->getStatusCode() === 200) {
-            return \json_decode((string)$response->getBody(), true);
-        }
-        throw new IvyException('can not create ivy session: ' . $response->getStatusCode() . ' ' . $response->getBody());
+        return $response;
     }
 
     /**
@@ -344,6 +338,7 @@ class IvyPaymentHelper
     /**
      * @param IvyTransaction $transaction
      * @return mixed|void
+     * @throws GuzzleException
      */
     public function updateOrder(IvyTransaction $transaction)
     {
