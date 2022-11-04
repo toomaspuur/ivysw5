@@ -24,3 +24,13 @@
         {$smarty.block.parent}
     {/if}
 {/block}
+
+{block name='frontend_index_content'}
+    {if $ivyError}
+        <br/>
+        {$namespace = "frontend/ivi_payment/checkout"}
+        {$ivyError = ""|snippet:$ivyError:$namespace}
+        {include file="frontend/_includes/messages.tpl" type="error" content=$ivyError}
+    {/if}
+    {$smarty.block.parent}
+{/block}

@@ -119,6 +119,7 @@ class Frontend implements SubscriberInterface
                 }
             }
         }
+        $view->assign('ivyError', $controller->Request()->get('ivyError'));
         $view->assign('ivyEnabled', $ivyEnabled);
         $view->assign('ivyConfig', $this->config);
     }
