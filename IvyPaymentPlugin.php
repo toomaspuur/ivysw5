@@ -152,13 +152,22 @@ class IvyPaymentPlugin extends Plugin
      */
     private function managePayments(InstallContext $context)
     {
-        /** @var \Shopware\Components\ConfigWriter $config */
-        $config = $this->container->get('Shopware\Components\ConfigWriter');
-        $salutations = explode(',', $config->get('shopsalutations'));
-        if (!\in_array(self::SALUTATION_NA, $salutations, true)) {
+        $data = Shopware()->Db()->executeQuery("SELECT id, value FROM s_core_config_elements WHERE name = 'shopsalutations'")->fetch();
+        $elementId = $data['id'];
+        $salutations = \unserialize($data['value']);
+        $salutations = \explode(',', $salutations);
+        $salutations[] = self::SALUTATION_NA;
+        $salutations = \serialize(\implode(',', \array_unique($salutations)));
+        Shopware()->Db()->executeQuery('UPDATE s_core_config_elements SET value = ? WHERE id = ?', [$salutations, $elementId]);
+
+        $datas = Shopware()->Db()->executeQuery("SELECT id, value FROM s_core_config_values WHERE element_id = ?", [$elementId])->fetchAll();
+        foreach ($datas as $data) {
+            $valueId = $data['id'];
+            $salutations = \unserialize($data['value']);
+            $salutations = \explode(',', $salutations);
             $salutations[] = self::SALUTATION_NA;
-            $salutations = \implode(',', $salutations);
-            $config->save('shopsalutations', $salutations);
+            $salutations = \serialize(\implode(',', \array_unique($salutations)));
+            Shopware()->Db()->executeQuery('UPDATE s_core_config_values SET value = ? WHERE id = ?', [$salutations, $valueId]);
         }
 
         $em = Shopware()->Models();
