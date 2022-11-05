@@ -38,10 +38,10 @@ class IvyPaymentPlugin extends Plugin
 
     private $translations = [
         'de_DE' => [
-            'description' => 'Ivy - Klimaneutral Einkaufen',
+            'description' => 'Ivy - Nachhaltig bezahlen',
         ],
         'en_GB' => [
-            'description' => 'Ivy - Climate Neutral Shopping',
+            'description' => 'Ivy - Sustainable Shopping',
         ],
     ];
 
