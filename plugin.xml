@@ -11,7 +11,12 @@
     <link>https://www.hammercode.eu/</link>
     <author>HammerCode OÜ</author>
 
-    <compatibility minVersion="5.5.0" />
+    <compatibility minVersion="5.6.9" />
+
+    <changelog version="0.6.8">
+        <changes lang="de">Kompatibilität mit früheren Versionen</changes>
+        <changes lang="en">Backward compatibility</changes>
+    </changelog>
 
     <changelog version="0.6.7">
         <changes lang="de">Popup Checkout mit Handshake</changes>
