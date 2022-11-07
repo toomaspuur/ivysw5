@@ -37,7 +37,13 @@ $.plugin('ivyConfirm', {
                     }
                 } else {
                     console.error('cannot create ivy session');
-                    location.reload();
+                    var url = window.location.href;
+                    if (url.indexOf('?') > -1){
+                        url += '&ivyError=createSessionError'
+                    }else{
+                        url += '?ivyError=createSessionError'
+                    }
+                    window.location.href = url;
                 }
             }
         });
