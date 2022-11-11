@@ -9,6 +9,8 @@
 
 namespace IvyPaymentPlugin\Service;
 
+use Doctrine\DBAL\ForwardCompatibility\DriverResultStatement;
+use Doctrine\DBAL\ForwardCompatibility\Result;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use IvyPaymentPlugin\Components\CustomObjectNormalizer;
@@ -122,7 +124,15 @@ class IvyPaymentHelper
         $normalizers = [new CustomObjectNormalizer()];
         $this->serializer = new Serializer($normalizers, $encoders);
         $pluginName = Shopware()->Container()->getParameter('ivy_payment_plugin.plugin_name');
-        $this->version = 'sw5' . Shopware()->Container()->get('dbal_connection')->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName])->fetchOne();
+        $result = Shopware()->Container()
+                ->get('dbal_connection')
+                ->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName]);
+
+        if (method_exists(Result::class, 'fetchOne')) {
+            $this->version = 'sw5' . $result->fetchOne();
+        } else {
+            $this->version = 'sw5' . $result->fetchColumn();
+        }
         $this->ivyApiClient = $ivyApiClient;
     }
 
