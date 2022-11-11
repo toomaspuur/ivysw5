@@ -128,7 +128,7 @@ class IvyPaymentHelper
                 ->get('dbal_connection')
                 ->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName]);
 
-        if (method_exists(Result::class, 'fetchOne')) {
+        if (\method_exists(Result::class, 'fetchOne')) {
             $this->version = 'sw5' . $result->fetchOne();
         } else {
             $this->version = 'sw5' . $result->fetchColumn();
@@ -286,7 +286,7 @@ class IvyPaymentHelper
         $data = $this->getSessionCreateDataFromOrder($order);
         $data->setMetadata([
             '_sw_payment_token' => $swPaymentToken,
-            'sw-context-token' => Shopware()->Session()->getId(),
+            'sw-context-token' => Shopware()->Session()->get('sessionId'),
             ]);
         $data->setVerificationToken($swPaymentToken);
         $data->setHandshake(true);

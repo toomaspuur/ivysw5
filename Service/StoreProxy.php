@@ -12,7 +12,6 @@ namespace IvyPaymentPlugin\Service;
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\RequestOptions;
 use IvyPaymentPlugin\Components\IvyJsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Shopware\Components\Routing\Router;
@@ -60,15 +59,24 @@ class StoreProxy
         $cookieJar = CookieJar::fromArray(\json_decode(\base64_decode($swContextToken), true), $this->shop->getHost());
         $options = [
             'cookies' => $cookieJar,
-            RequestOptions::HEADERS => $request->headers->all(),
+            'headers' => $request->headers->all(),
         ];
         $params = $request->request->all();
         if (!empty($params)) {
-            $options[RequestOptions::FORM_PARAMS] = $params;
+            $options['form_params'] = $params;
         } elseif (!empty((string)$request->getContent())) {
-            $options[RequestOptions::BODY] = (string)$request->getContent();
+            $options['body'] = (string)$request->getContent();
         }
-        $response = $client->request($request->getMethod(), $url, $options);
+        switch ($request->getMethod()) {
+            case 'GET':
+                $response = $client->get($url, $options);
+                break;
+            case 'POST':
+                $response = $client->post($url, $options);
+                break;
+            default:
+                throw new \Exception('method not supported ' . $request->getMethod());
+        }
 
         $decoded = \json_decode($response->getBody(), true);
 
