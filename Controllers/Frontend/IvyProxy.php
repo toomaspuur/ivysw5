@@ -280,7 +280,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                 }
 
                 $signature = $this->persistBasket();
-                Shopware()->Session()->set('signature', $signature);
+                Shopware()->Session()->offsetSet('signature', $signature);
                 $this->logger->info('redirect to confirm');
                 $this->data = [
                     'redirect' => [

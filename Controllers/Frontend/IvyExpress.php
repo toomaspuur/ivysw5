@@ -7,7 +7,6 @@
  * @link https://www.hammercode.eu/
  */
 
-use GuzzleHttp\Exception\GuzzleException;
 use IvyPaymentPlugin\Components\BasketPersisterTrait;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\Logger\IvyPaymentLogger;
@@ -55,7 +54,6 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
     /**
      * @return void
      * @throws Exception
-     * @throws GuzzleException
      */
     public function preDispatch()
     {
@@ -131,7 +129,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
                 $this->logger->info('-- create new express ivy session');
                 $ivySession = $this->expressService->createExpressSession($basket, $dispatch, $country);
             } else {
-                $this->session->set('IvyNotExpressCheckout', true);
+                $this->session->offsetSet('IvyNotExpressCheckout', true);
                 $this->logger->info('-- create new ivy session');
                 $order = $this->ivyHelper->getCurrentTemporaryOrder();
                 if ($order) {
