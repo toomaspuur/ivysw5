@@ -11,9 +11,8 @@ namespace IvyPaymentPlugin\Service;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
-use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Message\ResponseInterface;
 use IvyPaymentPlugin\Components\IvyJsonResponse;
-use Psr\Http\Message\ResponseInterface;
 use Shopware\Components\Routing\Router;
 use Shopware\Models\Shop\Shop;
 use Symfony\Component\HttpFoundation\Request;
@@ -44,7 +43,7 @@ class StoreProxy
      * @param Request $request
      * @param $swContextToken
      * @return ResponseInterface
-     * @throws GuzzleException
+     * @throws \Exception
      */
     public function proxy(Request $request, $swContextToken)
     {
@@ -85,7 +84,7 @@ class StoreProxy
             if ($request->isSecure()) {
                 $url = \str_replace('http:', 'https:', $url);
             }
-            return $client->request('POST', $url, $options);
+            return $client->post($url, $options);
         }
         return $response;
     }
