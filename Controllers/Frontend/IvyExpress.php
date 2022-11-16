@@ -7,7 +7,6 @@
  * @link https://www.hammercode.eu/
  */
 
-use GuzzleHttp\Exception\GuzzleException;
 use IvyPaymentPlugin\Components\BasketPersisterTrait;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\Logger\IvyPaymentLogger;
@@ -55,7 +54,6 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
     /**
      * @return void
      * @throws Exception
-     * @throws GuzzleException
      */
     public function preDispatch()
     {
@@ -93,7 +91,11 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             }
             $swContextToken = $ivyPaymentSession->getSwContextToken();
             $this->logger->debug('send proxy request');
-            $proxyResponse = $storeProxy->proxy($this->request, $swContextToken);
+            try {
+                $proxyResponse = $storeProxy->proxy($this->request, $swContextToken);
+            } catch (\Throwable $e) {
+                $this->logger->error($e->getMessage());
+            }
             $this->logger->debug('received proxy response');
             $content = (string)$proxyResponse->getBody();
             $this->logger->debug($content);
@@ -127,7 +129,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
                 $this->logger->info('-- create new express ivy session');
                 $ivySession = $this->expressService->createExpressSession($basket, $dispatch, $country);
             } else {
-                $this->session->set('IvyNotExpressCheckout', true);
+                $this->session->offsetSet('IvyNotExpressCheckout', true);
                 $this->logger->info('-- create new ivy session');
                 $order = $this->ivyHelper->getCurrentTemporaryOrder();
                 if ($order) {
@@ -155,7 +157,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
                 throw new IvyException('Ivy session has not session id');
             }
 
-            $shopwareSessionId = $this->session->getId();
+            $shopwareSessionId = $this->session->get('sessionId');
             $openedTransaction = $this->em->getRepository(IvyTransaction::class)->findOneBy([
                 'initialSessionId' => $shopwareSessionId,
                 'orderId' => null,
@@ -205,7 +207,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
     {
         $this->response = new IvyJsonResponse(['ok']);
         $ivyPaymentSession = $this->em->getRepository(IvyTransaction::class)->findOneBy(
-            ['initialSessionId' => Shopware()->Session()->getId()]
+            ['initialSessionId' => Shopware()->Session()->get('sessionId')]
         );
         if ($ivyPaymentSession instanceof IvyTransaction) {
             $swContextToken = $ivyPaymentSession->getSwContextToken();
