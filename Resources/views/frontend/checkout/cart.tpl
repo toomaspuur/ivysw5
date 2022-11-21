@@ -5,4 +5,5 @@
     <div class="ivy-banner-wrapper">
         {include file="frontend/ivy_payment_plugin/banner.tpl" iviPrice=$sBasket.AmountNet}
     </div>
+    <div style="clear: both;"></div>
 {/block}
