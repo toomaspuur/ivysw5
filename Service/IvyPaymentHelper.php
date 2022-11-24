@@ -90,6 +90,11 @@ class IvyPaymentHelper
     private $ivyApiClient;
 
     /**
+     * @var array
+     */
+    private $darkTheme;
+
+    /**
      * @param array $config
      * @param IvyApiClient $ivyApiClient
      * @param Logger $logger
@@ -124,6 +129,20 @@ class IvyPaymentHelper
         $pluginName = Shopware()->Container()->getParameter('ivy_payment_plugin.plugin_name');
         $this->version = 'sw5' . Shopware()->Container()->get('dbal_connection')->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName])->fetchOne();
         $this->ivyApiClient = $ivyApiClient;
+        $this->darkTheme = [
+            'darkThemeDetail' => $config['darkThemeDetail'],
+            'darkThemeOffCanva' => $config['darkThemeOffCanva'],
+            'darkThemeCart' => $config['darkThemeCart'],
+            'darkThemeRegister' => $config['darkThemeRegister'],
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function getDarkTheme()
+    {
+        return $this->darkTheme;
     }
 
     /**
