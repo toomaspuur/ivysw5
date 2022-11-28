@@ -182,6 +182,40 @@
 <!--            <value>https://cdn.sand.getivy.de/banner.js</value>-->
 <!--        </element>-->
 
+        <element type="button">
+            <name>theme</name>
+            <label lang="de">Theme</label>
+            <label lang="en">Theme</label>
+        </element>
+
+        <element type="boolean">
+            <name>darkThemeDetail</name>
+            <label lang="de">Dunkles Theme auf der Produktdetailseite</label>
+            <label lang="en">Dark theme on the product detail page</label>
+            <value>0</value>
+        </element>
+
+        <element type="boolean">
+            <name>darkThemeOffCanva</name>
+            <label lang="de">Dunkles Theme im Miniwarenkorb</label>
+            <label lang="en">Dark theme in mini shopping cart</label>
+            <value>0</value>
+        </element>
+
+        <element type="boolean">
+            <name>darkThemeCart</name>
+            <label lang="de">Dunkles Theme im Warenkorb</label>
+            <label lang="en">Dark theme in shopping cart</label>
+            <value>0</value>
+        </element>
+
+        <element type="boolean">
+            <name>darkThemeRegister</name>
+            <label lang="de">Dunkles Theme auf der Registrierungsseite</label>
+            <label lang="en">Dark theme on the registration page</label>
+            <value>0</value>
+        </element>
+
     </elements>
 
 </config>

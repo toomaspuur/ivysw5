@@ -136,6 +136,7 @@ class Frontend implements SubscriberInterface
         $view->assign('ivyMcc', $this->ivyPaymentHelper->getIvyMcc());
         $view->assign('ivyBannerUrl', $this->ivyPaymentHelper->getIvyBannerUrl());
         $view->assign('ivyButtonUrl', $this->ivyPaymentHelper->getIvyButtonUrl());
+        $view->assign($this->ivyPaymentHelper->getDarkTheme());
         try {
             $shop = Shopware()->Shop();
             $locale = \explode('_', $shop->getLocale()->getLocale())[0];
