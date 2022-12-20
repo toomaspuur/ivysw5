@@ -13,6 +13,11 @@
 
     <compatibility minVersion="5.6.0" />
 
+    <changelog version="0.6.10">
+        <changes lang="de">Feat: dunkles Theme</changes>
+        <changes lang="en">Feat: dark theme</changes>
+    </changelog>
+
     <changelog version="0.6.9">
         <changes lang="de">Fix: config service ist nun public</changes>
         <changes lang="en">Fix: make config service public</changes>
