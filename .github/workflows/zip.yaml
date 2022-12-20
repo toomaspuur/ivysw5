@@ -16,10 +16,9 @@ jobs:
           zip -r temp.zip .
           echo HERE 1
           mkdir temp_folder
+          ls
           mv temp.zip temp_folder
-          cd temp_folder
-          unzip temp.zip
-          echo HERE 2
+          unzip /temp_folder/temp.zip
           ls
           mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
           echo HERE 3
