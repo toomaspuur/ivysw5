@@ -18,7 +18,8 @@ jobs:
           mkdir temp_folder
           ls
           mv temp.zip temp_folder
-          unzip /temp_folder/temp.zip
+          ls
+          unzip temp_folder/temp.zip
           ls
           mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
           echo HERE 3
@@ -27,4 +28,4 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          files: /temp_folder/IvyPaymentPlugin-${BRANCH_NAME}.zip
+          files: temp_folder/IvyPaymentPlugin-${BRANCH_NAME}.zip
