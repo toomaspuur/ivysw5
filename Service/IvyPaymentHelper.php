@@ -92,6 +92,11 @@ class IvyPaymentHelper
     private $ivyApiClient;
 
     /**
+     * @var array
+     */
+    private $darkTheme;
+
+    /**
      * @param array $config
      * @param IvyApiClient $ivyApiClient
      * @param Logger $logger
@@ -134,6 +139,20 @@ class IvyPaymentHelper
             $this->version = 'sw5' . $result->fetchColumn();
         }
         $this->ivyApiClient = $ivyApiClient;
+        $this->darkTheme = [
+            'darkThemeDetail' => $config['darkThemeDetail'],
+            'darkThemeOffCanva' => $config['darkThemeOffCanva'],
+            'darkThemeCart' => $config['darkThemeCart'],
+            'darkThemeRegister' => $config['darkThemeRegister'],
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function getDarkTheme()
+    {
+        return $this->darkTheme;
     }
 
     /**

@@ -10,6 +10,7 @@
         data-shop-category="{$ivyMcc}"
         data-locale="{$ivyLocale}"
         data-currency-code="{$currency}"
+        data-theme = "{$theme}"
     ></div>
     <script src="{$ivyButtonUrl}"></script>
 </div>
