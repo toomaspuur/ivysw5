@@ -13,7 +13,7 @@ jobs:
         run: |
           BRANCH_NAME=${GITHUB_REF##*/}
           echo ${BRANCH_NAME}
-          zip -r temp.zip . -x "*.git*"
+          zip -r temp.zip .
           echo HERE 1
           unzip temp.zip
           echo HERE
