@@ -14,6 +14,7 @@ jobs:
           BRANCH_NAME=${GITHUB_REF##*/}
           echo ${BRANCH_NAME}
           zip -r temp.zip . -x "*.git*"
+          echo HERE 1
           unzip temp.zip
           echo HERE
           mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
