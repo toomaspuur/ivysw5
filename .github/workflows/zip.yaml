@@ -1,0 +1,22 @@
+name: Create zip archive on tag
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Create zip archive
+        run: |
+          BRANCH_NAME=${GITHUB_REF##*/}
+          zip -r temp.zip . -x "*.git*"
+          unzip temp.zip
+          mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
+          zip -r IvyPaymentPlugin-${BRANCH_NAME}.zip IvyPaymentPlugin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          files: IvyPaymentPlugin-${BRANCH_NAME}.zip
