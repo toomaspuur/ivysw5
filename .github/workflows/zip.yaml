@@ -20,6 +20,7 @@ jobs:
           cd temp_folder
           unzip temp.zip
           echo HERE 2
+          ls
           mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
           echo HERE 3
           zip -r IvyPaymentPlugin-${BRANCH_NAME}.zip IvyPaymentPlugin
