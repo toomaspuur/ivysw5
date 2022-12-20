@@ -7,13 +7,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: montudor/action-zip@v1.0.0
       
       - name: Create zip archive
         run: |
           BRANCH_NAME=${GITHUB_REF##*/}
+          echo BRANCH_NAME
           zip -r temp.zip . -x "*.git*"
           unzip temp.zip
+          echo HERE
           mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
+          echo HERE 2
           zip -r IvyPaymentPlugin-${BRANCH_NAME}.zip IvyPaymentPlugin
 
       - name: Upload artifact
