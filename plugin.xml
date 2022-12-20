@@ -13,6 +13,11 @@
 
     <compatibility minVersion="5.7.0" />
 
+    <changelog version="0.6.10">
+        <changes lang="de">Feat: Theme Farbe anpassbar</changes>
+        <changes lang="en">Feat: theme color is adaptable</changes>
+    </changelog>
+
     <changelog version="0.6.9">
         <changes lang="de">Fix: config service ist nun public</changes>
         <changes lang="en">Fix: make config service public</changes>
