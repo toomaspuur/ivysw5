@@ -15,13 +15,16 @@ jobs:
           echo ${BRANCH_NAME}
           zip -r temp.zip .
           echo HERE 1
+          mkdir temp_folder
+          mv temp.zip temp_folder
+          cd temp_folder
           unzip temp.zip
-          echo HERE
-          mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
           echo HERE 2
+          mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
+          echo HERE 3
           zip -r IvyPaymentPlugin-${BRANCH_NAME}.zip IvyPaymentPlugin
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          files: IvyPaymentPlugin-${BRANCH_NAME}.zip
+          files: /temp_folder/IvyPaymentPlugin-${BRANCH_NAME}.zip
