@@ -12,7 +12,7 @@ jobs:
       - name: Create zip archive
         run: |
           BRANCH_NAME=${GITHUB_REF##*/}
-          echo BRANCH_NAME
+          echo ${BRANCH_NAME}
           zip -r temp.zip . -x "*.git*"
           unzip temp.zip
           echo HERE
