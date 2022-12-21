@@ -22,11 +22,12 @@ jobs:
           echo changeDirectory
           cd temp_folder
           ls
-          unzip temp_folder/temp.zip
+          unzip temp.zip
           ls
           mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
           echo HERE 3
           zip -r IvyPaymentPlugin-${BRANCH_NAME}.zip IvyPaymentPlugin
+          cd ..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
