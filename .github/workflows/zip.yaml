@@ -26,4 +26,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: IvySW5-${BRANCH_NAME}.zip
-          path: IvySW5-${BRANCH_NAME}.zip
+          path: IvySW5-*.zip
