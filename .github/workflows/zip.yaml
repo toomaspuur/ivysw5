@@ -2,7 +2,7 @@ name: Create zip archive on tag
 
 on:
   push:
-    branches: [main]    
+    branches: [main, test-workflows]    
     tags:
       - "v*.*.*"
   pull_request:
