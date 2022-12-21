@@ -12,24 +12,16 @@ jobs:
       - name: Create zip archive
         run: |
           BRANCH_NAME=${GITHUB_REF##*/}
-          echo ${BRANCH_NAME}
           zip -r temp.zip .
           echo HERE 1
-          mkdir temp_folder
+          mkdir IvyPaymentPlugin
           ls
-          mv temp.zip temp_folder
+          unzip temp.zip -d IvyPaymentPlugin
           ls
-          echo changeDirectory
-          cd temp_folder
-          ls
-          unzip temp.zip
-          ls
-          mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
           echo HERE 3
-          zip -r IvyPaymentPlugin-${BRANCH_NAME}.zip IvyPaymentPlugin
-          cd ..
+          zip -r IvySW5-${BRANCH_NAME}.zip IvyPaymentPlugin
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          files: temp_folder/IvyPaymentPlugin-${BRANCH_NAME}.zip
+          files: IvySW5-${BRANCH_NAME}.zip
