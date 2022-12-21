@@ -17,6 +17,7 @@ jobs:
           mkdir IvyPaymentPlugin
           ls
           unzip temp.zip -d IvyPaymentPlugin
+          rm temp.zip
           ls
           echo HERE 3
           zip -r IvySW5-${BRANCH_NAME}.zip IvyPaymentPlugin
@@ -25,5 +26,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: IvySW5-${BRANCH_NAME}.zip
-          path: IvySW5-*.zip
+          name: IvyPaymentPlugin
+          path: IvyPaymentPlugin
