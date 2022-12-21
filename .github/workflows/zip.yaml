@@ -20,8 +20,10 @@ jobs:
           ls
           echo HERE 3
           zip -r IvySW5-${BRANCH_NAME}.zip IvyPaymentPlugin
+          ls
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          files: IvySW5-${BRANCH_NAME}.zip
+          name: IvySW5-${BRANCH_NAME}.zip
+          path: IvySW5-${BRANCH_NAME}.zip
