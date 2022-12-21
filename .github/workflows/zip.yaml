@@ -19,6 +19,9 @@ jobs:
           ls
           mv temp.zip temp_folder
           ls
+          echo changeDirectory
+          cd temp_folder
+          ls
           unzip temp_folder/temp.zip
           ls
           mv shopware-5-${BRANCH_NAME} IvyPaymentPlugin
