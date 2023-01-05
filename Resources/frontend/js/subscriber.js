@@ -9,3 +9,8 @@ $.subscribe('plugin/swCollapseCart/onLoadCartFinished', function() {
 $.subscribe('plugin/swShippingPayment/onInputChanged', function() {
     StateManager.addPlugin('.ivy-banner','ivyBanner');
 });
+
+$.subscribe('plugin/swAjaxVariant/onRequestData', function() {
+    StateManager.addPlugin('.ivy--express-checkout-btn','ivyExpress');
+    StateManager.addPlugin('.ivy-banner','ivyBanner');
+});
