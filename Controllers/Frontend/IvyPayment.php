@@ -193,30 +193,48 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
             }
 
-            $orderNumber = (string)$this->saveOrder(
-                $ivyPaymentSession->getIvySessionId(),
-                $referenceId,
-                Status::PAYMENT_STATE_OPEN
-            );
+            $orderNumber = '';
+            //always prefer an existing order
+            if ($ivyPaymentSession->getOrderId()) {
+                try {
+                    $existedOrder = $ivyPaymentSession->getOrder();
+                } catch (\Exception $e) {
+                    $existedOrder = null;
+                }
+                if ($existedOrder instanceof Order) {
+                    $orderNumber = (string)$existedOrder->getNumber();
+                }
+            }
 
             if ($orderNumber === '') {
-                throw new IvyException('can not save order');
-            }
-            $this->logger->info('created  order with number ' . $orderNumber);
+                $orderNumber = (string)$this->saveOrder(
+                    $ivyPaymentSession->getIvySessionId(),
+                    $referenceId,
+                    Status::PAYMENT_STATE_OPEN
+                );
 
-            $order = $this->em->getRepository(Order::class)
-                ->findOneBy(['number' => $orderNumber]);
-            if (!$order instanceof Order) {
-                throw new IvyException('can not load saved order');
-            }
+                if ($orderNumber === '') {
+                    throw new IvyException('can not save order');
+                }
+                $this->logger->info('created  order with number ' . $orderNumber);
 
-            $ivyPaymentSession->setStatus(IvyTransaction::PAYMENT_STATUS_PROCESSING);
-            $ivyPaymentSession->setUpdated(new \DateTime());
-            $ivyPaymentSession->setOrder($order);
-            $this->em->flush($ivyPaymentSession);
+                $order = $this->em->getRepository(Order::class)
+                    ->findOneBy(['number' => $orderNumber]);
+                if (!$order instanceof Order) {
+                    throw new IvyException('can not load saved order');
+                }
+
+                $ivyPaymentSession->setStatus(IvyTransaction::PAYMENT_STATUS_PROCESSING);
+                $ivyPaymentSession->setUpdated(new \DateTime());
+                $ivyPaymentSession->setOrder($order);
+                $this->em->flush($ivyPaymentSession);
+            } else {
+                $this->logger->info('order existing: ' . $orderNumber);
+            }
 
             $outputData = [
                 'redirectUrl' => $this->router->assemble(['controller' => 'checkout', 'action' => 'finish']),
+                'displayId' => $orderNumber,
                 'metadata' => [
                     '_sw_payment_token' => $signature,
                 ]

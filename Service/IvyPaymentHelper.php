@@ -93,6 +93,10 @@ class IvyPaymentHelper
      * @var array
      */
     private $darkTheme;
+    /**
+     * @var bool
+     */
+    private $showDetailBtn;
 
     /**
      * @param array $config
@@ -135,6 +139,15 @@ class IvyPaymentHelper
             'darkThemeCart' => $config['darkThemeCart'],
             'darkThemeRegister' => $config['darkThemeRegister'],
         ];
+        $this->showDetailBtn = !isset($config['showDetailBtn']) || (int)$config['showDetailBtn'] === 1;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShowDetailBtn()
+    {
+        return $this->showDetailBtn;
     }
 
     /**
