@@ -132,6 +132,24 @@
             </store>
         </element>
 
+        <element type="select" scope="shop" required="true">
+            <name>showDetailBtn</name>
+            <label lang="de">Button auf Produktdetailseite einblenden</label>
+            <label lang="en">Show button on product detail page</label>
+            <store>
+                <option>
+                    <value>1</value>
+                    <label lang="de">Ja</label>
+                    <label lang="en">Yes</label>
+                </option>
+                <option>
+                    <value>0</value>
+                    <label lang="de">Nein</label>
+                    <label lang="en">No</label>
+                </option>
+            </store>
+        </element>
+
         <element type="button">
             <name>prod</name>
             <label lang="de">API-Zugang Produktivmodus</label>
