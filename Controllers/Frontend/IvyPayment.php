@@ -250,7 +250,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $outputData['error'] = $error;
         }
 
-        $this->logger->info('send proxy response');
+        $this->logger->info('send proxy response: ' . \print_r($outputData, true));
 
         \ini_set('serialize_precision', '3');
         $response = new IvyJsonResponse($outputData);
