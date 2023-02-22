@@ -10,10 +10,13 @@
 
     <services>
 
+        <service class="IvyPaymentPlugin\Service\IvyConfigReader"
+                 id="ivy_payment_plugin.service.ivy_config_reader"
+                 parent="shopware.plugin.cached_config_reader"/>
+
         <service id="ivy_payment_plugin.config" class="Shopware\Components\Plugin\CachedConfigReader" public="true">
-            <factory service="shopware.plugin.cached_config_reader" method="getByPluginName"/>
+            <factory service="ivy_payment_plugin.service.ivy_config_reader" method="getByPluginName"/>
             <argument type="string">%ivy_payment_plugin.plugin_name%</argument>
-            <argument type="service" id="shop" on-invalid="null"/>
         </service>
 
         <service class="IvyPaymentPlugin\Service\IvyPaymentHelper" id="ivy_payment_helper" public="true">

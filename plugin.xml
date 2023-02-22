@@ -17,7 +17,10 @@
         <changes lang="de">Ajax Warenkorb Layout</changes>
         <changes lang="en">ajax cart layout</changes>
     </changelog>
-
+    <changelog version="0.6.11">
+        <changes lang="de">Config: Button auf Produktdetailseite einblenden</changes>
+        <changes lang="en">Config: Show button on product detail page</changes>
+    </changelog>
     <changelog version="0.6.9">
         <changes lang="de">Fix: config service ist nun public</changes>
         <changes lang="en">Fix: make config service public</changes>
