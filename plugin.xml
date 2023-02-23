@@ -4,7 +4,7 @@
     <label lang="de">Ivy - Nachhaltig Bezahlen</label>
     <label lang="en">Ivy - Sustainable Shopping</label>
     
-    <version>0.6.12</version>
+    <version>0.6.13</version>
 
     <description lang="en">Ivy - Sustainable Payment. Choose Ivy at the payment step. Climate action with every transaction. Finance climate projects by helping online shops save on payment fees.</description>
     <description lang="de">Ivy - Nachhaltig. Wähle Ivy bei den Zahlungsarten. Klimaschutz mit jeder Transaktion. Finanziere Klimaschutz, indem du Online-Shops hilfst, Zahlungsgebühren zu sparen.</description>
@@ -14,6 +14,11 @@
     <author>HammerCode OÜ</author>
 
     <compatibility minVersion="5.7.0" />
+
+    <changelog version="0.6.13">
+        <changes lang="de">Fix subtotals</changes>
+        <changes lang="en">Fix subtotals</changes>
+    </changelog>
 
     <changelog version="0.6.12">
         <changes lang="de">Ajax Warenkorb Layout</changes>
