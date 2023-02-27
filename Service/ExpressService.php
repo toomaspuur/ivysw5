@@ -457,14 +457,11 @@ class ExpressService
      */
     public function validateConfirmPayload(array $payload, array $basket)
     {
-        $shippingTotal = $basket['sShippingcostsWithTax'];
-        $shippingNet = $basket['sShippingcostsNet'];
-        $shippingVat = $shippingTotal - $shippingNet;
-
-        $total = $basket['sAmount'];
-        $vatTotal = $basket['sAmountTax'];
-        $totalNet = $total - $vatTotal - $shippingNet;
-        $vat = $vatTotal - $shippingVat;
+        $price = $this->ivyHelper->getPriceFromCart($basket);
+        $shippingTotal = $price->getShipping();
+        $total = $price->getTotal();
+        $totalNet = $price->getTotalNet();
+        $vat = $price->getVat();
 
         $violations = [];
         $accuracy = 0.0001;
