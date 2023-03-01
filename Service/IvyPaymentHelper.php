@@ -29,7 +29,6 @@ use Shopware\Models\Country\Country;
 use Shopware\Models\Order\Order;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 class IvyPaymentHelper
@@ -492,18 +491,26 @@ class IvyPaymentHelper
 
         $total = $basket['sAmount'];
         $vatTotal = $basket['sAmountTax'];
-        $totalNet = $total - $vatTotal - $shippingNet;
-        $vat = $vatTotal - $shippingVat;
 
+        // IVYPLGS-14: subtotal = total - shipping
+        $subTotal = $total - $shippingTotal;
         if ($skipShipping) {
-            $total -= $shippingTotal;
+            $total = $subTotal;
             $shippingTotal = 0;
+            $vat = $vatTotal - $shippingVat;
+            // IVYPLGS-14: total = totalNet + vat + shipping
+            $totalNet = $total - $vat;
+        } else {
+            $vat = $vatTotal;
+            // IVYPLGS-14: total = totalNet + vat + shipping
+            $totalNet = $total - $vatTotal - $shippingNet;
         }
 
         $price = new price();
         $price->setTotalNet($totalNet)
             ->setVat($vat)
             ->setTotal($total)
+            ->setSubTotal($subTotal)
             ->setShipping($shippingTotal)
             ->setCurrency($basket['sCurrencyName']);
         return $price;

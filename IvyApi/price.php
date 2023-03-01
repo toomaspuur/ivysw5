@@ -19,6 +19,8 @@ class price
     private $shipping = 0.;
     /** @var float  */
     private $total = 0.;
+    /** @var float  */
+    private $subTotal = 0.;
     /** @var string  */
     private $currency = '';
 
@@ -111,4 +113,24 @@ class price
     {
         return $this->currency;
     }
+
+    /**
+     * @return float
+     */
+    public function getSubTotal()
+    {
+        return $this->subTotal;
+    }
+
+    /**
+     * @param float $subTotal
+     * @return price
+     */
+    public function setSubTotal($subTotal)
+    {
+        $this->subTotal = $subTotal;
+        return $this;
+    }
+
+
 }
