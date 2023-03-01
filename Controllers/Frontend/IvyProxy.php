@@ -267,7 +267,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                     $shippingMethodId = $shippingMethod['reference'];
                     $this->setDispatch($shippingMethodId, $paymentId);
                     $this->get(ContextServiceInterface::class)->initializeShopContext();
-                    $this->expressService->validateConfirmPayload($payload, $this->getBasket());
+                    $this->expressService->validateConfirmPayload($payload, $this->getBasket(), false);
                     $this->logger->info('confrim payload is valid');
                     parent::confirmAction();
                 } else {

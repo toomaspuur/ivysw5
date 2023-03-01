@@ -452,16 +452,22 @@ class ExpressService
     /**
      * @param array $payload
      * @param array $basket
+     * @param $useTotalVat
      * @return void
      * @throws IvyException
      */
-    public function validateConfirmPayload(array $payload, array $basket)
+    public function validateConfirmPayload(array $payload, array $basket, $useTotalVat = true)
     {
         $price = $this->ivyHelper->getPriceFromCart($basket);
         $shippingTotal = $price->getShipping();
         $total = $price->getTotal();
         $totalNet = $price->getTotalNet();
-        $vat = $price->getVat();
+        if ($useTotalVat) {
+            $vat = $price->getVat();
+        } else {
+            $vat = $total - $shippingTotal - $totalNet;
+        }
+
 
         $violations = [];
         $accuracy = 0.0001;
