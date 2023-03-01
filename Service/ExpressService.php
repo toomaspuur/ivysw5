@@ -475,12 +475,6 @@ class ExpressService
         if (\abs($total - $payload['price']['total']) > $accuracy) {
             $violations[] = '$payload["price"]["total"] is ' . $payload['price']['total'] . ' waited ' . $total;
         }
-        if (\abs($totalNet - $payload['price']['totalNet']) > $accuracy) {
-            $violations[] = '$payload["price"]["totalNet"] is ' . $payload['price']['totalNet'] . ' waited ' . $totalNet;
-        }
-        if (\abs($vat - $payload['price']['vat']) > $accuracy) {
-            $violations[] = '$payload["price"]["vat"] is ' . $payload['price']['vat'] . ' waited ' . $vat;
-        }
         if (\abs($shippingTotal - $payload['price']['shipping']) > $accuracy) {
             $violations[] = '$payload["price"]["shipping"] is ' . $payload['price']['shipping'] . ' waited ' . $shippingTotal;
         }
@@ -495,28 +489,12 @@ class ExpressService
         foreach ($payloadLineItems as $key => $payloadLineItem) {
             /** @var lineItem $lineItem */
             $lineItem = $basket['content'][$key];
-            if ($lineItem['articlename'] !== $payloadLineItem['name']) {
-                $violations[] = '$payloadLineItem["name"] is ' . $payloadLineItem["name"] . ' waited ' . $lineItem['articlename'];
-            }
+            $quantity = $lineItem['quantity'];
+            
             if ($lineItem['ordernumber'] !== $payloadLineItem['referenceId']) {
                 $violations[] = '$payloadLineItem["referenceId"] is ' . $payloadLineItem["referenceId"] . ' waited ' . $lineItem['ordernumber'];
             }
 
-            $singleNet = $lineItem['netprice'];
-            $singleTotal = $lineItem['price'];
-            $singleVat = $singleTotal - $singleNet;
-            $quantity = $lineItem['quantity'];
-            $amount = $singleTotal * $quantity;
-
-            if (\abs($singleNet - $payloadLineItem['singleNet']) > $accuracy) {
-                $violations[] = '$payloadLineItem["singleNet"] is ' . $payloadLineItem["singleNet"] . ' waited ' . $singleNet;
-            }
-            if (\abs($singleVat - $payloadLineItem['singleVat']) > $accuracy) {
-                $violations[] = '$payloadLineItem["singleVat"] is ' . $payloadLineItem["singleVat"] . ' waited ' . $singleVat;
-            }
-            if (\abs($amount - $payloadLineItem['amount']) > $accuracy) {
-                $violations[] = '$payloadLineItem["amount"] is ' . $payloadLineItem["amount"] . ' waited ' . $amount;
-            }
             if ((int)$quantity !== (int)$payloadLineItem['quantity']) {
                 $violations[] = '$payloadLineItem["quantity"] is ' . $payloadLineItem["quantity"] . ' waited ' . $quantity;
             }
