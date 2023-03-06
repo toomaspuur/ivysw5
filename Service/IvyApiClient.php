@@ -71,7 +71,7 @@ class IvyApiClient
             'headers' => $headers,
             RequestOptions::BODY => $jsonContent,
         ];
-
+        $this->apiLogger->info('send ' . $endpoint . print_r($options, true));
         try {
             $response = $client->post($endpoint, $options);
             $this->apiLogger->info('response: ' . (string)$response->getBody());

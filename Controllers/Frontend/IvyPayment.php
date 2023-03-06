@@ -216,7 +216,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 if ($orderNumber === '') {
                     throw new IvyException('can not save order');
                 }
-                $this->logger->info('created  order with number ' . $orderNumber);
+                $this->logger->info('created order with number ' . $orderNumber);
 
                 $order = $this->em->getRepository(Order::class)
                     ->findOneBy(['number' => $orderNumber]);
@@ -237,6 +237,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 'displayId' => $orderNumber,
                 'metadata' => [
                     '_sw_payment_token' => $signature,
+                    'shopwareOrderId' => $orderNumber
                 ]
             ];
 
@@ -319,7 +320,9 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
         }
 
-        $this->ivyHelper->updateOrder($transaction);
+        if (!$transaction->isExpress()) {
+            $this->ivyHelper->updateOrder($transaction);
+        }
         $this->redirect(['controller' => 'checkout', 'action' => 'finish']);
     }
 
@@ -411,7 +414,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 if ($paymentStatus) {
                     $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
                 }
-                if ($type === 'order_created') {
+                if ($type === 'order_created' && !$transaction->isExpress()) {
                     $this->ivyHelper->updateOrder($transaction);
                 }
                 return new JsonResponse(['success' => true], Response::HTTP_OK);
