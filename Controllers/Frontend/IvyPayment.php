@@ -241,7 +241,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 ]
             ];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->error($e->getMessage());
             $this->logger->error($e->getTraceAsString());
             $error = $e->getMessage();
