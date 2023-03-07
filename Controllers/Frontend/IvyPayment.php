@@ -235,6 +235,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $outputData = [
                 'redirectUrl' => $this->router->assemble(['controller' => 'checkout', 'action' => 'finish']),
                 'displayId' => $orderNumber,
+                'referenceId' => $orderNumber,
                 'metadata' => [
                     '_sw_payment_token' => $signature,
                     'shopwareOrderId' => $orderNumber
