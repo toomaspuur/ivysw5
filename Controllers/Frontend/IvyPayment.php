@@ -216,7 +216,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 if ($orderNumber === '') {
                     throw new IvyException('can not save order');
                 }
-                $this->logger->info('created  order with number ' . $orderNumber);
+                $this->logger->info('created order with number ' . $orderNumber);
 
                 $order = $this->em->getRepository(Order::class)
                     ->findOneBy(['number' => $orderNumber]);
@@ -235,12 +235,14 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $outputData = [
                 'redirectUrl' => $this->router->assemble(['controller' => 'checkout', 'action' => 'finish']),
                 'displayId' => $orderNumber,
+                'referenceId' => $orderNumber,
                 'metadata' => [
                     '_sw_payment_token' => $signature,
+                    'shopwareOrderId' => $orderNumber
                 ]
             ];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->error($e->getMessage());
             $this->logger->error($e->getTraceAsString());
             $error = $e->getMessage();
@@ -319,7 +321,6 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
         }
 
-        $this->ivyHelper->updateOrder($transaction);
         $this->redirect(['controller' => 'checkout', 'action' => 'finish']);
     }
 
@@ -410,9 +411,6 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 $paymentStatus = IvyTransaction::STATUS_MAP[$status] ?: null;
                 if ($paymentStatus) {
                     $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
-                }
-                if ($type === 'order_created') {
-                    $this->ivyHelper->updateOrder($transaction);
                 }
                 return new JsonResponse(['success' => true], Response::HTTP_OK);
             }

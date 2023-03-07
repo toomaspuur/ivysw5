@@ -380,7 +380,6 @@ class IvyPaymentHelper
     /**
      * @param IvyTransaction $transaction
      * @return mixed|void
-     * @throws GuzzleException
      */
     public function updateOrder(IvyTransaction $transaction)
     {
@@ -412,7 +411,9 @@ class IvyPaymentHelper
         try {
             $response = $client->post($this->ivyServiceUrl . 'order/update', $options);
         } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
+            $this->logger->error('communication error: ' . $e->getMessage());
+            return;
+        } catch (GuzzleException $e) {
             $this->logger->error('communication error: ' . $e->getMessage());
             return;
         }

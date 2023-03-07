@@ -70,7 +70,7 @@ class IvyApiClient
             'headers' => $headers,
             'body' => $jsonContent,
         ];
-
+        $this->apiLogger->info('send ' . $endpoint . print_r($options, true));
         try {
             $response = $client->post($endpoint, $options);
             $this->apiLogger->info('response: ' . (string)$response->getBody());
