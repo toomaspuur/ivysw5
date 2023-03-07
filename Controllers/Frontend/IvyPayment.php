@@ -321,9 +321,6 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
         }
 
-        if (!$transaction->isExpress()) {
-            $this->ivyHelper->updateOrder($transaction);
-        }
         $this->redirect(['controller' => 'checkout', 'action' => 'finish']);
     }
 
@@ -414,9 +411,6 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 $paymentStatus = IvyTransaction::STATUS_MAP[$status] ?: null;
                 if ($paymentStatus) {
                     $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
-                }
-                if ($type === 'order_created' && !$transaction->isExpress()) {
-                    $this->ivyHelper->updateOrder($transaction);
                 }
                 return new JsonResponse(['success' => true], Response::HTTP_OK);
             }
