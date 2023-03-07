@@ -120,8 +120,11 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $isExpress = $this->Request()->get('express', true);
             $isExpress = $isExpress === 'true' || $isExpress === true;
             $basket = $this->getBasket();
-            $dispatch = $this->getSelectedDispatch();
             $country = $this->getSelectedCountry();
+            $dispatch = $this->getSelectedDispatch();
+            if (!\is_array($dispatch)) {
+                $dispatch = [];
+            }
             if ($isExpress) {
                 $this->session->offsetUnset('IvyNotExpressCheckout');
                 $this->logger->info('-- create new express ivy session');
@@ -229,8 +232,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $cookies = \json_decode(\base64_decode($swContextToken), true);
             $basePath = Shopware()->Shop()->getBasePath();
             foreach ($cookies as $name => $value) {
-                $cookie = new Cookie($name, $value, 0, $basePath);
-                setcookie($name, $value);
+                $cookie = new Cookie($name, $value, 0, $basePath, '', '');
                 $this->response->headers->setCookie($cookie);
                 if (\preg_match('/^session-\d/', $name)) {
                     $data[$name] = $value;
