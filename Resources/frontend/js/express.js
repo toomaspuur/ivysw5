@@ -3,6 +3,7 @@ $.plugin('ivyExpress', {
         var scriptSrc = this.$el.find("script")[0].src;
         this.loadScript(scriptSrc, this.docLoaded);
         this.$el.on('click', this.createSession.bind(this));
+        this.referenceId = null;
     },
     createSession() {
         $('.close--off-canvas').trigger('click');
@@ -29,7 +30,7 @@ $.plugin('ivyExpress', {
         let me = this;
         $.ajax({
             type: 'GET',
-            url: me.$el.data('refresh'),
+            url: me.$el.data('refresh') + '?reference=' + me.referenceId,
             success : function(response) {
                 setTimeout(function() {
                     me.refreshShopwareSession();
@@ -47,6 +48,7 @@ $.plugin('ivyExpress', {
                 if (response.redirectUrl) {
                     if (typeof startIvyCheckout === 'function') {
                         startIvyCheckout(response.redirectUrl, 'popup');
+                        me.referenceId = response.referenceId;
                         me.refreshShopwareSession();
                     } else {
                         console.error('startIvyCheckout is not defined');
