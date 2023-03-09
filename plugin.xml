@@ -4,7 +4,7 @@
     <label lang="de">Ivy - Nachhaltig Bezahlen</label>
     <label lang="en">Ivy - Sustainable Shopping</label>
     
-    <version>0.6.15</version>
+    <version>0.6.18</version>
 
     <description lang="en">Ivy - Sustainable Payment. Choose Ivy at the payment step. Climate action with every transaction. Finance climate projects by helping online shops save on payment fees.</description>
     <description lang="de">Ivy - Nachhaltig. Wähle Ivy bei den Zahlungsarten. Klimaschutz mit jeder Transaktion. Finanziere Klimaschutz, indem du Online-Shops hilfst, Zahlungsgebühren zu sparen.</description>
@@ -15,6 +15,21 @@
 
     <compatibility minVersion="5.6.0" />
         
+    <changelog version="0.6.18">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+        
+    <changelog version="0.6.17">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+        
+    <changelog version="0.6.16">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+
     <changelog version="0.6.15">
         <changes lang="de">Fix Express Redirect</changes>
         <changes lang="en">Fix express redirect</changes>
