@@ -8,7 +8,7 @@
         <service id="ivy_payment_plugin.monolog.line.formatter" class="Monolog\Formatter\LineFormatter">
             <argument>null</argument>
             <argument>null</argument>
-            <argument>true</argument>
+            <argument>false</argument>
         </service>
 
         <service class="IvyPaymentPlugin\Logger\IvyPaymentLogger" id="ivy_payment_logger" public="true">

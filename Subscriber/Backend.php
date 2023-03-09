@@ -69,7 +69,8 @@ class Backend implements SubscriberInterface
         return [
             'Enlight_Controller_Action_PostDispatch_Backend_Order' => 'postDispatchOrder',
             'Shopware_Controllers_Backend_Order::deleteAction::before' => 'onDeleteAction',
-            'Shopware_Controllers_Backend_Config::saveFormAction::after' => 'afterSaveConfig'
+            'Shopware_Controllers_Backend_Config::saveFormAction::after' => 'afterSaveConfig',
+            'Enlight_Controller_Action_PostDispatch_Backend_Log' => 'postDispatchLog',
         ];
     }
 
@@ -145,4 +146,21 @@ class Backend implements SubscriberInterface
         }
     }
 
+    public function postDispatchLog(\Enlight_Controller_ActionEventArgs $args)
+    {
+        /** @var \Shopware_Controllers_Backend_Order $controller */
+        $controller = $args->getSubject();
+        $request = $controller->Request();
+
+        $view = $controller->View();
+        $view->addTemplateDir($this->viewDir);
+        if ($request->getActionName() === 'load') {
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/view/detail/window.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/view/ivy/list.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/store/ivy_logs.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/model/ivy_logs.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/store/ivy_files.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/model/ivy_files.js');
+        }
+    }
 }
