@@ -122,6 +122,8 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 $this->logger->debug('create new transaction');
                 $transaction = new IvyTransaction();
                 $this->em->persist($transaction);
+                $swContexToken = $this->expressService->generateSwContextToken();
+                $transaction->setSwContextToken($swContexToken);
             }
 
             $transaction->setUpdated(new \DateTime());
