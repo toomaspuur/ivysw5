@@ -94,7 +94,9 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             try {
                 $proxyResponse = $storeProxy->proxy($this->request, $swContextToken);
             } catch (\Throwable $e) {
+                $this->logger->error('proxy request error');
                 $this->logger->error($e->getMessage());
+                $this->logger->error($e->getTraceAsString());
             }
             $this->logger->debug('received proxy response');
             $content = (string)$proxyResponse->getBody();

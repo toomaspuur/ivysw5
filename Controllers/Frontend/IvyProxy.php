@@ -162,11 +162,15 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                     $this->em->flush($ivyPaymentSession);
                 }
 
+                $userData = $this->getUserData();
+                $this->logger->info('$userData[\'additional\'][\'countryShipping\']: ' . \print_r($userData['additional']['countryShipping'], true));
                 // reload user data in controller
-                $this->View()->assign('sUserData', $this->getUserData());
+                $this->View()->assign('sUserData', $userData);
+
 
                 if (isset($payload['shipping']['shippingAddress'])) {
                     try {
+                        $this->data['shippingMethods'] = [];
                         $paymentId = $this->expressService->getPaymentId();
                         $sDispatches = $this->getDispatches($paymentId);
                         foreach ($sDispatches as $dispatch) {

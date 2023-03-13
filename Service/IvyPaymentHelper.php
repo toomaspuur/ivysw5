@@ -527,17 +527,17 @@ class IvyPaymentHelper
         $ivyMcc = (string)$this->getIvyMcc();
         foreach ($basket['content'] as $swLineItem) {
             $lineItem = new lineItem();
-            $singleNet = $swLineItem['netprice'];
-            $singleTotal = $swLineItem['price'];
+            $singleNet = (float)$swLineItem['netprice'];
+            $singleTotal = (float)$swLineItem['additional_details']['price_numeric'];
             $singleVat = $singleTotal - $singleNet;
             $quantity = $swLineItem['quantity'];
 
             $lineItem->setName($swLineItem['articlename'])
                 ->setReferenceId($swLineItem['ordernumber'])
                 ->setCategory($ivyMcc)
-                ->setSingleNet($singleNet)
-                ->setSingleVat($singleVat)
-                ->setAmount($singleTotal * $quantity)
+                ->setSingleNet(\round($singleNet,2))
+                ->setSingleVat(\round($singleVat, 2))
+                ->setAmount(\round($singleTotal * $quantity, 2))
                 ->setQuantity($quantity);
 
             if (isset($swLineItem['additional_details']['image']['source'])) {
