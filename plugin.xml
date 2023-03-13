@@ -13,7 +13,7 @@
     <link>https://www.hammercode.eu/</link>
     <author>HammerCode OÜ</author>
 
-    <compatibility minVersion="5.7.0" />
+    <compatibility minVersion="5.6.0" />
         
     <changelog version="0.6.19">
         <changes lang="de">Fix Express Redirect</changes>
