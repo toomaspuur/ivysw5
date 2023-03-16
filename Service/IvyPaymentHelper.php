@@ -518,7 +518,7 @@ class IvyPaymentHelper
         foreach ($basket['content'] as $swLineItem) {
             $lineItem = new lineItem();
             $singleNet = (float)$swLineItem['netprice'];
-            $singleTotal = (float)$swLineItem['additional_details']['price_numeric'];
+            $singleTotal = (float)$swLineItem['priceNumeric'];
             $singleVat = $singleTotal - $singleNet;
             $quantity = $swLineItem['quantity'];
 
