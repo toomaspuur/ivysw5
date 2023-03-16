@@ -229,6 +229,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 $ivyPaymentSession->setStatus(IvyTransaction::PAYMENT_STATUS_PROCESSING);
                 $ivyPaymentSession->setUpdated(new \DateTime());
                 $ivyPaymentSession->setOrder($order);
+                $ivyPaymentSession->setReference($orderNumber);
                 $this->em->flush($ivyPaymentSession);
             } else {
                 $this->logger->info('order existing: ' . $orderNumber);
