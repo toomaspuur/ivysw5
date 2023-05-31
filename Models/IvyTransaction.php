@@ -39,6 +39,13 @@ class IvyTransaction extends ModelEntity
     const STATUS_REFUNDED = 'refunded';
     const STATUS_IN_DISPUTE = 'in_dispute';
 
+    const STATUS_WAITING = 'waiting_for_payment';
+
+    const CREATE_ORDER_STATUSES = [
+        self::STATUS_PAID,
+        self::STATUS_WAITING,
+    ];
+
     const STATUS_MAP = [
         self::STATUS_FAILED              => Status::PAYMENT_STATE_THE_PROCESS_HAS_BEEN_CANCELLED,
         self::STATUS_CANCELED            => Status::PAYMENT_STATE_THE_PROCESS_HAS_BEEN_CANCELLED,
@@ -49,6 +56,7 @@ class IvyTransaction extends ModelEntity
         self::STATUS_DISPUTED            => Status::PAYMENT_STATE_RE_CREDITING,
         self::STATUS_IN_REFUND           => Status::PAYMENT_STATE_REVIEW_NECESSARY,
         self::STATUS_REFUNDED            => Status::PAYMENT_STATE_RE_CREDITING,
+        self::STATUS_WAITING             => Status::PAYMENT_STATE_THE_PAYMENT_HAS_BEEN_ORDERED,
     ];
 
     public function __construct()
@@ -124,6 +132,13 @@ class IvyTransaction extends ModelEntity
      * @ORM\Column(name="reference", type="string", length=255, nullable=true)
      */
     private $reference;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="orderNumber", type="string", length=255, nullable=true)
+     */
+    private $orderNumber;
 
     /**
      * @var string
@@ -411,4 +426,21 @@ class IvyTransaction extends ModelEntity
         return $this;
     }
 
+    /**
+     * @return string
+     */
+    public function getOrderNumber(): string
+    {
+        return $this->orderNumber;
+    }
+
+    /**
+     * @param string $orderNumber
+     * @return IvyTransaction
+     */
+    public function setOrderNumber(string $orderNumber): IvyTransaction
+    {
+        $this->orderNumber = $orderNumber;
+        return $this;
+    }
 }

@@ -51,4 +51,21 @@ class IvyTransactionRepository extends ModelRepository
 
         return $builder;
     }
+
+    /**
+     * @param string $reference
+     * @return IvyTransaction|null
+     */
+    public function findByReference(string $reference)
+    {
+        $builder = $this->getEntityManager()->createQueryBuilder();
+
+        return $builder->select(['t'])
+            ->from($this->getEntityName(), 't')
+            ->where('t.orderNumber = :reference OR t.reference = :reference')
+            ->setParameter('reference', $reference)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getResult()[0];
+    }
 }

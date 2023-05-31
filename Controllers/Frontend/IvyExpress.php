@@ -100,15 +100,18 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
                 $this->logger->error($e->getMessage());
                 $this->logger->error($e->getTraceAsString());
             }
-            $this->logger->debug('received proxy response');
-            $content = (string)$proxyResponse->getBody();
-            $this->logger->debug($content);
-            $this->response->setContent($content);
-            $this->response->headers->set('Content-Type', $proxyResponse->getHeader('Content-Type'));
-            $signature = $ivyHelper->sign($content);
-            $this->response->headers->set('X-Ivy-Signature', $signature);
-            $this->logger->info('output body:' . $content);
-            $this->logger->info('X-Ivy-Signature:' . $signature);
+            if (isset($proxyResponse)) {
+                $this->logger->debug('received proxy response');
+                $content = (string)$proxyResponse->getBody();
+                $this->logger->debug($content);
+                $this->response->setContent($content);
+                $this->response->headers->set('Content-Type', $proxyResponse->getHeader('Content-Type'));
+                $signature = $ivyHelper->sign($content);
+                $this->response->headers->set('X-Ivy-Signature', $signature);
+                $this->logger->info('output body:' . $content);
+                $this->logger->info('X-Ivy-Signature:' . $signature);
+            }
+
             $this->response->send();
             $this->get('kernel')->terminate($this->request, $this->response);
             exit(0);
