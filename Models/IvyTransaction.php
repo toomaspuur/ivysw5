@@ -54,7 +54,7 @@ class IvyTransaction extends ModelEntity
         self::STATUS_PAID                => Status::PAYMENT_STATE_COMPLETELY_PAID,
         self::STATUS_IN_DISPUTE          => Status::PAYMENT_STATE_REVIEW_NECESSARY,
         self::STATUS_DISPUTED            => Status::PAYMENT_STATE_RE_CREDITING,
-        self::STATUS_IN_REFUND           => Status::PAYMENT_STATE_REVIEW_NECESSARY,
+        self::STATUS_IN_REFUND           => Status::PAYMENT_STATE_RE_CREDITING,
         self::STATUS_REFUNDED            => Status::PAYMENT_STATE_RE_CREDITING,
         self::STATUS_WAITING             => Status::PAYMENT_STATE_THE_PAYMENT_HAS_BEEN_ORDERED,
     ];
