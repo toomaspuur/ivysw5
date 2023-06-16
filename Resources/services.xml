@@ -36,7 +36,7 @@
             <argument id="ivy_payment_logger" type="service"/>
         </service>
 
-        <service class="IvyPaymentPlugin\Service\IvyApiClient" id="ivy_api_client">
+        <service class="IvyPaymentPlugin\Service\IvyApiClient" id="ivy_api_client" public="true">
             <argument id="ivy_payment_plugin.config" type="service"/>
             <argument id="ivy_payment_plugin.logger.ivy_api_logger" type="service"/>
         </service>
