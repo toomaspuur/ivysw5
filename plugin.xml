@@ -4,7 +4,7 @@
     <label lang="de">Ivy - Nachhaltig Bezahlen</label>
     <label lang="en">Ivy - Sustainable Shopping</label>
     
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <description lang="en">Ivy - Sustainable Payment. Choose Ivy at the payment step. Climate action with every transaction. Finance climate projects by helping online shops save on payment fees.</description>
     <description lang="de">Ivy - Nachhaltig. Wähle Ivy bei den Zahlungsarten. Klimaschutz mit jeder Transaktion. Finanziere Klimaschutz, indem du Online-Shops hilfst, Zahlungsgebühren zu sparen.</description>
@@ -13,8 +13,18 @@
     <link>https://www.hammercode.eu/</link>
     <author>HammerCode OÜ</author>
 
-    <compatibility minVersion="5.6.0" />
+    <compatibility minVersion="5.7.0" />
         
+    <changelog version="1.0.1">
+        <changes lang="de">Sync Order Ids</changes>
+        <changes lang="en">Sync Order Ids</changes>
+    </changelog>      
+     
+    <changelog version="1.0.0">
+        <changes lang="de">Change to reservation orders</changes>
+        <changes lang="en">Change to reservation orders</changes>
+    </changelog>   
+     
     <changelog version="0.6.20">
         <changes lang="de">Fix Express Redirect</changes>
         <changes lang="en">Fix express redirect</changes>
