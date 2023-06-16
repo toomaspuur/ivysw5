@@ -20,7 +20,7 @@ There are 2 ways of installing the plugin manually:
   Download a `IvyPayment-vX.Y.Z.zip`, upload it in your Shopware Backend and proceed as usual.
 
 * Install the development version from https://github.com/getivy/shopware-5 .
-  Download the source code and place it in the folder `custom/plugins/MollieShopware` in your Shopware shop.
+  Download the source code and place it in the folder `custom/plugins/IvyPayment` in your Shopware shop.
 
   
 
