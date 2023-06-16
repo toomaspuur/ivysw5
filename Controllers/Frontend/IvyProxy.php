@@ -378,6 +378,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
             $toCreateOrder = $toUpdateOrder = false;
             $ivyPaymentSession->setStatus($status);
             $ivyPaymentSession->setUpdated(new \DateTime());
+            $ivyPaymentSession->setIvyOrderId($payload['id']);
             $this->em->flush($ivyPaymentSession);
             $order = $ivyPaymentSession->getOrder();
             if (!$order) {

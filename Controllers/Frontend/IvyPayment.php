@@ -379,6 +379,12 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $this->logger->info('status for createOrder ' . \var_export($statusForCreateOrder, true));
             $referenceId = $payload['referenceId'];
             $transaction = $this->em->getRepository(IvyTransaction::class)->findByReference($referenceId);
+            if (!$transaction) {
+                $order = $this->em->getRepository(\Shopware\Models\Order\Order::class)->findOneBy(['number' => $referenceId]);
+                if ($order) {
+                    $transaction = $this->em->getRepository(IvyTransaction::class)->findOneBy(['orderId' => $order->getId()]);
+                }
+            }
             if ($transaction) {
                 /** @var \IvyPaymentPlugin\Service\StoreProxy $storeProxy */
                 $storeProxy = $this->container->get('ivy_store_proxy');
@@ -468,8 +474,23 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                         'shopwareOrderId' => $orderNumber
                     ]
                 ];
-
                 $this->logger->info('created order with number ' . $orderNumber);
+
+                $this->logger->info('update ivy order');
+                $ivyOrderId = $ivyPaymentSession->getIvyOrderId();
+                /** @var \IvyPaymentPlugin\Service\IvyApiClient $ivyApiClient */
+                $ivyApiClient = $this->container->get('ivy_api_client');
+                $ivyResponse = $ivyApiClient->sendApiRequest('order/update', \json_encode([
+                    'id' => $ivyOrderId,
+                    'displayId' => $orderNumber,
+                    'referenceId' => $orderNumber,
+                    'metadata' => [
+                        'shopwareOrderId' => $orderNumber
+                    ]
+                ]));
+
+                $this->logger->info('ivy response: ' . \print_r($ivyResponse, true));
+
 
                 $order = $this->em->getRepository(Order::class)
                     ->findOneBy(['number' => $orderNumber]);
