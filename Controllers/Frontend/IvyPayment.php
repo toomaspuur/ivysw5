@@ -233,7 +233,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
 
         $this->logger->info('send proxy response: ' . \print_r($outputData, true));
 
-        \ini_set('serialize_precision', '3');
+        \ini_set('serialize_precision', '-1');
         $response = new IvyJsonResponse($outputData);
         $response->send();
         $this->get('kernel')->terminate($this->request, $response);
@@ -521,7 +521,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
 
         $this->logger->info('createOrder send proxy response');
 
-        \ini_set('serialize_precision', '3');
+        \ini_set('serialize_precision', '-1');
         $response = new IvyJsonResponse($outputData);
         $response->send();
         $this->get('kernel')->terminate($this->request, $response);

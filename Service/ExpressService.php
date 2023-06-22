@@ -12,6 +12,7 @@ namespace IvyPaymentPlugin\Service;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use IvyPaymentPlugin\Components\CustomObjectNormalizer;
+use IvyPaymentPlugin\Exception\IvyApiException;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\lineItem;
 use IvyPaymentPlugin\IvyApi\sessionCreate;

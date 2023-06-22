@@ -515,11 +515,11 @@ class IvyPaymentHelper
         }
 
         $price = new price();
-        $price->setTotalNet($totalNet)
-            ->setVat($vat)
-            ->setTotal($total)
-            ->setSubTotal($subTotal)
-            ->setShipping($shippingTotal)
+        $price->setTotalNet(\round($totalNet, 2))
+            ->setVat(\round($vat,2))
+            ->setTotal(\round($total,2))
+            ->setSubTotal(\round($subTotal,2))
+            ->setShipping(\round($shippingTotal,2))
             ->setCurrency($basket['sCurrencyName']);
         return $price;
     }
