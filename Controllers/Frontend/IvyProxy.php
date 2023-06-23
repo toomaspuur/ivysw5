@@ -98,7 +98,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
      */
     public function postDispatch()
     {
-        \ini_set('serialize_precision', '3');
+        \ini_set('serialize_precision', '-1');
         $response = new IvyJsonResponse($this->data);
         if (isset($this->data['redirect'])) {
             $response->setStatusCode(IvyJsonResponse::HTTP_FOUND);
@@ -149,18 +149,20 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                 if ($ivyPaymentSession === null) {
                     throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
                 }
-                $updated =  $this->expressService->updateUser($payload);
-                if (!$updated) {
-                    $this->logger->debug('not updated, try to create new guest and login');
-                    $customer = $this->expressService->createAndLoginQuickCustomer($payload);
-                    if (!$customer instanceof Customer) {
-                        throw new IvyException('cann not create customer');
-                    }
-                    $this->logger->info('created customer: ' .  $customer->getEmail());
+                if (isset($payload['shippingAddress']) || isset($payload['shipping']) || isset($payload['billingAddress'])) {
+                    $updated =  $this->expressService->updateUser($payload);
+                    if (!$updated) {
+                        $this->logger->debug('not updated, try to create new guest and login');
+                        $customer = $this->expressService->createAndLoginQuickCustomer($payload);
+                        if (!$customer instanceof Customer) {
+                            throw new IvyException('cann not create customer');
+                        }
+                        $this->logger->info('created customer: ' .  $customer->getEmail());
 
-                    $swContexToken = $this->expressService->generateSwContextToken();
-                    $ivyPaymentSession->setSwContextToken($swContexToken);
-                    $this->em->flush($ivyPaymentSession);
+                        $swContexToken = $this->expressService->generateSwContextToken();
+                        $ivyPaymentSession->setSwContextToken($swContexToken);
+                        $this->em->flush($ivyPaymentSession);
+                    }
                 }
 
                 $userData = $this->getUserData();
@@ -216,10 +218,11 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                     $this->data['discount'] = [
                         'amount' => - $discountAmount,
                     ];
+                    $price = $this->ivyHelper->getPriceFromCart($basket, true);
                     $this->data['price'] = [
-                        'totalNet' => $basket['AmountNetNumeric'],
-                        'vat' => $basket['AmountNumeric'] - $basket['AmountNetNumeric'],
-                        'total' => $basket['AmountNumeric']
+                        'totalNet' => $price->getTotalNet(),
+                        'vat' => $price->getVat(),
+                        'total' => $price->getTotal()
                     ];
                 } else {
                     $this->data['discount'] = [];
