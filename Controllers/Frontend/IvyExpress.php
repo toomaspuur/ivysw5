@@ -205,7 +205,7 @@ class Shopware_Controllers_Frontend_IvyExpress extends Shopware_Controllers_Fron
             $data['success'] = false;
             $data['error'] = $message;
         }
-        \ini_set('serialize_precision', '3');
+        \ini_set('serialize_precision', '-1');
         $this->response = new IvyJsonResponse($data);
         $this->response->send();
         $this->get('kernel')->terminate($this->request, $this->response);

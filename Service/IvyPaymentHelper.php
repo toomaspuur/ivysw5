@@ -490,7 +490,14 @@ class IvyPaymentHelper
         $shippingNet = $basket['sShippingcostsNet'];
         $shippingVat = $shippingTotal - $shippingNet;
 
-        $total = $basket['sAmount'];
+        if (isset($basket['sAmountWithTax'])) {
+            //Change default price to net:
+            $total = $basket['sAmountWithTax'];
+        } else {
+            //Change default price to gross:
+            $total = $basket['sAmount'];
+        }
+
         $vatTotal = $basket['sAmountTax'];
 
         // IVYPLGS-14: subtotal = total - shipping
@@ -508,11 +515,11 @@ class IvyPaymentHelper
         }
 
         $price = new price();
-        $price->setTotalNet($totalNet)
-            ->setVat($vat)
-            ->setTotal($total)
-            ->setSubTotal($subTotal)
-            ->setShipping($shippingTotal)
+        $price->setTotalNet(\round($totalNet, 2))
+            ->setVat(\round($vat,2))
+            ->setTotal(\round($total,2))
+            ->setSubTotal(\round($subTotal,2))
+            ->setShipping(\round($shippingTotal,2))
             ->setCurrency($basket['sCurrencyName']);
         return $price;
     }
@@ -529,6 +536,11 @@ class IvyPaymentHelper
             $lineItem = new lineItem();
             $singleNet = (float)$swLineItem['netprice'];
             $singleTotal = (float)$swLineItem['priceNumeric'];
+            $taxRate = $swLineItem['additional_details']['tax'] ?? 0;
+            if ($singleNet === $singleTotal  && $taxRate > 0) {
+                //Change default price to net:
+                $singleTotal = round($singleNet * (1 + $taxRate / 100), 2);
+            }
             $singleVat = $singleTotal - $singleNet;
             $quantity = $swLineItem['quantity'];
 
