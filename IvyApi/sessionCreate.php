@@ -9,6 +9,8 @@
 
 namespace IvyPaymentPlugin\IvyApi;
 
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
 class sessionCreate
 {
     /** @var string  */
@@ -37,6 +39,28 @@ class sessionCreate
     private $handshake;
     /** @var prefill */
     private $prefill;
+    /** @var string */
+    private $successCallbackUrl;
+    /** @var string */
+    private $errorCallbackUrl;
+    /** @var string */
+    private $quoteCallbackUrl;
+    /** @var string */
+    private $webhookUrl;
+    /** @var string */
+    private $completeCallbackUrl;
+
+    public function __construct()
+    {
+        $router = Shopware()->Container()->get('router', ContainerInterface::NULL_ON_INVALID_REFERENCE);
+        if ($router !== null) {
+            $this->successCallbackUrl = $router->assemble(['module' => 'frontend', 'controller' => 'IvyPayment', 'action' => 'success']);
+            $this->errorCallbackUrl = $router->assemble(['module' => 'frontend', 'controller' => 'IvyPayment', 'action' => 'error']);
+            $this->quoteCallbackUrl = $router->assemble(['module' => 'frontend', 'controller' => 'IvyExpress', 'action' => 'callback']);
+            $this->webhookUrl = $router->assemble(['module' => 'frontend', 'controller' => 'IvyPayment', 'action' => 'notify']);
+            $this->completeCallbackUrl = $router->assemble(['module' => 'frontend', 'controller' => 'IvyExpress', 'action' => 'confirm']);
+        }
+    }
 
     /**
      * @param string $referenceId
@@ -284,4 +308,58 @@ class sessionCreate
         return $this;
     }
 
+    public function getSuccessCallbackUrl(): string
+    {
+        return $this->successCallbackUrl;
+    }
+
+    public function setSuccessCallbackUrl(string $successCallbackUrl): sessionCreate
+    {
+        $this->successCallbackUrl = $successCallbackUrl;
+        return $this;
+    }
+
+    public function getErrorCallbackUrl(): string
+    {
+        return $this->errorCallbackUrl;
+    }
+
+    public function setErrorCallbackUrl(string $errorCallbackUrl): sessionCreate
+    {
+        $this->errorCallbackUrl = $errorCallbackUrl;
+        return $this;
+    }
+
+    public function getQuoteCallbackUrl(): string
+    {
+        return $this->quoteCallbackUrl;
+    }
+
+    public function setQuoteCallbackUrl(string $quoteCallbackUrl): sessionCreate
+    {
+        $this->quoteCallbackUrl = $quoteCallbackUrl;
+        return $this;
+    }
+
+    public function getWebhookUrl(): string
+    {
+        return $this->webhookUrl;
+    }
+
+    public function setWebhookUrl(string $webhookUrl): sessionCreate
+    {
+        $this->webhookUrl = $webhookUrl;
+        return $this;
+    }
+
+    public function getCompleteCallbackUrl(): string
+    {
+        return $this->completeCallbackUrl;
+    }
+
+    public function setCompleteCallbackUrl(string $completeCallbackUrl): sessionCreate
+    {
+        $this->completeCallbackUrl = $completeCallbackUrl;
+        return $this;
+    }
 }

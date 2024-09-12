@@ -56,7 +56,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
      */
     public function getWhitelistedCSRFActions()
     {
-        return ['notify', 'express'];
+        return ['notify', 'express', 'createOrder'];
     }
 
     /**
@@ -122,6 +122,8 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
                 $this->logger->debug('create new transaction');
                 $transaction = new IvyTransaction();
                 $this->em->persist($transaction);
+                $swContexToken = $this->expressService->generateSwContextToken();
+                $transaction->setSwContextToken($swContexToken);
             }
 
             $transaction->setUpdated(new \DateTime());
@@ -187,42 +189,39 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
 
             /** @var IvyTransaction $ivyPaymentSession */
             $ivyPaymentSession = $this->em
-                ->getRepository(IvyTransaction::class)
-                ->findOneBy(['reference' => $referenceId]);
+                ->getRepository(IvyTransaction::class)->findByReference($referenceId);
             if ($ivyPaymentSession === null) {
                 throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
             }
 
-            $orderNumber = (string)$this->saveOrder(
-                $ivyPaymentSession->getIvySessionId(),
-                $referenceId,
-                Status::PAYMENT_STATE_OPEN
-            );
-
-            if ($orderNumber === '') {
-                throw new IvyException('can not save order');
-            }
-            $this->logger->info('created  order with number ' . $orderNumber);
-
-            $order = $this->em->getRepository(Order::class)
-                ->findOneBy(['number' => $orderNumber]);
-            if (!$order instanceof Order) {
-                throw new IvyException('can not load saved order');
+            $orderNumber = '';
+            if ($ivyPaymentSession->getOrderId()) {
+                try {
+                    $existedOrder = $ivyPaymentSession->getOrder();
+                } catch (\Exception $e) {
+                    $existedOrder = null;
+                }
+                if ($existedOrder instanceof Order) {
+                    $orderNumber = (string)$existedOrder->getNumber();
+                }
             }
 
-            $ivyPaymentSession->setStatus(IvyTransaction::PAYMENT_STATUS_PROCESSING);
-            $ivyPaymentSession->setUpdated(new \DateTime());
-            $ivyPaymentSession->setOrder($order);
-            $this->em->flush($ivyPaymentSession);
+
+            if (!empty($orderNumber)) {
+                $this->logger->info('order existing: ' . $orderNumber);
+            }
 
             $outputData = [
                 'redirectUrl' => $this->router->assemble(['controller' => 'checkout', 'action' => 'finish']),
+                'displayId' => $orderNumber,
+                'referenceId' => $orderNumber,
                 'metadata' => [
                     '_sw_payment_token' => $signature,
+                    'shopwareOrderId' => $orderNumber
                 ]
             ];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->error($e->getMessage());
             $this->logger->error($e->getTraceAsString());
             $error = $e->getMessage();
@@ -232,9 +231,9 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $outputData['error'] = $error;
         }
 
-        $this->logger->info('send proxy response');
+        $this->logger->info('send proxy response: ' . \print_r($outputData, true));
 
-        \ini_set('serialize_precision', '3');
+        \ini_set('serialize_precision', '-1');
         $response = new IvyJsonResponse($outputData);
         $response->send();
         $this->get('kernel')->terminate($this->request, $response);
@@ -301,7 +300,6 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
         }
 
-        $this->ivyHelper->updateOrder($transaction);
         $this->redirect(['controller' => 'checkout', 'action' => 'finish']);
     }
 
@@ -343,7 +341,7 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
     /**
      * @return JsonResponse
      */
-    private function handleWebhook()
+    private function handleWebhook(): JsonResponse
     {
         $request = $this->Request();
         $body = $request->getRawBody();
@@ -376,27 +374,38 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             }
 
             $status = $payload['status'];
-            $appId = $payload['appId'];
+            $this->logger->info('WebHook status is ' . $status);
+            $statusForCreateOrder = \in_array($status, IvyTransaction::CREATE_ORDER_STATUSES, true);
+            $this->logger->info('status for createOrder ' . \var_export($statusForCreateOrder, true));
             $referenceId = $payload['referenceId'];
-            $transaction = $this->em->getRepository(IvyTransaction::class)
-                ->findOneBy(['reference' => $referenceId]);
+            $transaction = $this->em->getRepository(IvyTransaction::class)->findByReference($referenceId);
+            if (!$transaction) {
+                $order = $this->em->getRepository(\Shopware\Models\Order\Order::class)->findOneBy(['number' => $referenceId]);
+                if ($order) {
+                    $transaction = $this->em->getRepository(IvyTransaction::class)->findOneBy(['orderId' => $order->getId()]);
+                }
+            }
             if ($transaction) {
-                $transaction->setStatus($status);
-                $transaction->setUpdated(new \DateTime());
-                $this->em->flush($transaction);
-                if (!$transaction->getOrder() || !$transaction->getOrder()->getNumber()) {
-                    //skip order ist not yet created
-                    return new JsonResponse(['success' => false, 'error' => 'order ist not yet created'], Response::HTTP_BAD_REQUEST);
+                /** @var \IvyPaymentPlugin\Service\StoreProxy $storeProxy */
+                $storeProxy = $this->container->get('ivy_store_proxy');
+                try {
+                    $swContextToken = $transaction->getSwContextToken();
+                    $proxyResponse = $storeProxy->proxy($this->request, $swContextToken);
+                } catch (\Throwable $e) {
+                    $this->logger->error('proxy request error');
+                    $this->logger->error($e->getMessage());
+                    $this->logger->error($e->getTraceAsString());
                 }
-                $sOrder = Shopware()->Modules()->Order();
-                $paymentStatus = IvyTransaction::STATUS_MAP[$status] ?: null;
-                if ($paymentStatus) {
-                    $sOrder->setPaymentStatus($transaction->getOrderId(), $paymentStatus);
+                if (isset($proxyResponse)) {
+                    $this->logger->info('handleWebhook received proxy response');
+                    $content = (string)$proxyResponse->getBody();
+                    $this->logger->debug($content);
+                    $this->response->setContent($content);
+                    $this->response->headers->set('Content-Type', $proxyResponse->getHeader('Content-Type'));
                 }
-                if ($type === 'order_created') {
-                    $this->ivyHelper->updateOrder($transaction);
-                }
-                return new JsonResponse(['success' => true], Response::HTTP_OK);
+                $this->response->send();
+                $this->get('kernel')->terminate($this->request, $this->response);
+                exit(0);
             }
             $this->logger->error('ivy transaction by referenceId not found ' . $referenceId);
         } catch (\Exception $e) {
@@ -404,6 +413,118 @@ class Shopware_Controllers_Frontend_IvyPayment extends Shopware_Controllers_Fron
             $this->logger->error($e->getTraceAsString());
             return new JsonResponse(['success' => false, 'error' => 'transaction update error: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+        $this->logger->error('webhook unknown error');
         return new JsonResponse(['success' => false, 'error' => 'unknown error'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+
+    public function createOrderAction()
+    {
+        $this->logger = $this->expressService->getLogger();
+        $this->logger->info('create order action');
+        $request = $this->Request();
+        $outputData = [];
+        $error = null;
+        try {
+            if ('ivy_payment' !== $this->getPaymentShortName()) {
+                throw new IvyException('invalid payment method selected ' . $this->getPaymentShortName());
+            }
+            $signature = $request->get('_sw_payment_token');
+            $basket = $this->loadBasketFromSignature($signature);
+            $this->verifyBasketSignature($signature, $basket);
+
+            $referenceId = $this->request->get('referenceId');
+
+            /** @var IvyTransaction $ivyPaymentSession */
+            $ivyPaymentSession = $this->em
+                ->getRepository(IvyTransaction::class)->findByReference($referenceId);
+            if ($ivyPaymentSession === null) {
+                throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
+            }
+
+            $orderNumber = '';
+            //always prefer an existing order
+            if ($ivyPaymentSession->getOrderId()) {
+                try {
+                    $existedOrder = $ivyPaymentSession->getOrder();
+                } catch (\Exception $e) {
+                    $existedOrder = null;
+                }
+                if ($existedOrder instanceof Order) {
+                    $orderNumber = (string)$existedOrder->getNumber();
+                }
+            }
+            $paymentStatus = IvyTransaction::STATUS_MAP[$ivyPaymentSession->getStatus()] ?: null;
+
+            if ($orderNumber === '') {
+                $orderNumber = (string)$this->saveOrder(
+                    $ivyPaymentSession->getIvySessionId(),
+                    $referenceId,
+                    $paymentStatus
+                );
+
+                if ($orderNumber === '') {
+                    throw new IvyException('can not save order');
+                }
+
+                $outputData = [
+                    'success' => true,
+                    'displayId' => $orderNumber,
+                    'referenceId' => $orderNumber,
+                    'metadata' => [
+                        'shopwareOrderId' => $orderNumber
+                    ]
+                ];
+                $this->logger->info('created order with number ' . $orderNumber);
+
+                $this->logger->info('update ivy order');
+                $ivyOrderId = $ivyPaymentSession->getIvyOrderId();
+                /** @var \IvyPaymentPlugin\Service\IvyApiClient $ivyApiClient */
+                $ivyApiClient = $this->container->get('ivy_api_client');
+                $ivyResponse = $ivyApiClient->sendApiRequest('order/update', \json_encode([
+                    'id' => $ivyOrderId,
+                    'displayId' => $orderNumber,
+                    'referenceId' => $orderNumber,
+                    'metadata' => [
+                        'shopwareOrderId' => $orderNumber
+                    ]
+                ]));
+
+                $this->logger->info('ivy response: ' . \print_r($ivyResponse, true));
+
+
+                $order = $this->em->getRepository(Order::class)
+                    ->findOneBy(['number' => $orderNumber]);
+                if (!$order instanceof Order) {
+                    throw new IvyException('can not load saved order');
+                }
+
+                $ivyPaymentSession->setUpdated(new \DateTime());
+                $ivyPaymentSession->setOrder($order);
+                $ivyPaymentSession->setOrderNumber($orderNumber);
+                $this->em->flush($ivyPaymentSession);
+            } else {
+                $this->logger->info('order existing: ' . $orderNumber);
+            }
+
+
+
+        }  catch (\Throwable $e) {
+            $this->logger->error($e->getMessage());
+            $this->logger->error($e->getTraceAsString());
+            $error = $e->getMessage();
+        }
+
+        if ($error) {
+            $outputData['success'] = false;
+            $outputData['error'] = $error;
+        }
+
+        $this->logger->info('createOrder send proxy response');
+
+        \ini_set('serialize_precision', '-1');
+        $response = new IvyJsonResponse($outputData);
+        $response->send();
+        $this->get('kernel')->terminate($this->request, $response);
+        exit(0);
     }
 }

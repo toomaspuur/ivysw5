@@ -33,15 +33,35 @@ class Backend implements SubscriberInterface
     private $router;
 
     /**
+     * @var \Zend_Cache_Core
+     */
+    private $cache;
+
+    /**
+     * @var string
+     */
+    private $pluginName;
+
+    /**
      * @param IvyApiClient $ivyApiClient
      * @param \Enlight_Controller_Router $router
-     * @param string $viewDir
+     * @param \Zend_Cache_Core $cache
+     * @param $pluginName
+     * @param $viewDir
      */
-    public function __construct(IvyApiClient $ivyApiClient, \Enlight_Controller_Router $router, $viewDir)
+    public function __construct(
+        IvyApiClient $ivyApiClient,
+        \Enlight_Controller_Router $router,
+        \Zend_Cache_Core $cache,
+        $pluginName,
+        $viewDir
+    )
     {
         $this->viewDir = $viewDir;
         $this->ivyApiClient = $ivyApiClient;
         $this->router = $router;
+        $this->cache = $cache;
+        $this->pluginName = $pluginName;
     }
 
     public static function getSubscribedEvents()
@@ -49,15 +69,17 @@ class Backend implements SubscriberInterface
         return [
             'Enlight_Controller_Action_PostDispatch_Backend_Order' => 'postDispatchOrder',
             'Shopware_Controllers_Backend_Order::deleteAction::before' => 'onDeleteAction',
-            'Shopware_Controllers_Backend_Config::saveFormAction::after' => 'afterSaveConfig'
+            'Shopware_Controllers_Backend_Config::saveFormAction::after' => 'afterSaveConfig',
+            'Enlight_Controller_Action_PostDispatch_Backend_Log' => 'postDispatchLog',
         ];
     }
 
     /**
      * @param \Enlight_Hook_HookArgs $args
      * @return void
-     * @throws GuzzleException
      * @throws IvyApiException
+     * @throws \Zend_Db_Adapter_Exception
+     * @throws \Zend_Db_Statement_Exception
      */
     public function afterSaveConfig(\Enlight_Hook_HookArgs $args)
     {
@@ -66,6 +88,13 @@ class Backend implements SubscriberInterface
         $name = $subject->Request()->get('name');
         if ($name !== 'IvyPaymentPlugin') {
             return;
+        }
+        $shopIds = Shopware()->Db()->query('SELECT id FROM s_core_shops')->fetchAll(\PDO::FETCH_COLUMN);
+        $cacheKey = $this->pluginName;
+        $this->cache->remove($cacheKey);
+        foreach ($shopIds as $shopId) {
+            $cacheKey = $this->pluginName . $shopId;
+            $this->cache->remove($cacheKey);
         }
 
         $jsonContent = \json_encode([
@@ -117,4 +146,21 @@ class Backend implements SubscriberInterface
         }
     }
 
+    public function postDispatchLog(\Enlight_Controller_ActionEventArgs $args)
+    {
+        /** @var \Shopware_Controllers_Backend_Order $controller */
+        $controller = $args->getSubject();
+        $request = $controller->Request();
+
+        $view = $controller->View();
+        $view->addTemplateDir($this->viewDir);
+        if ($request->getActionName() === 'load') {
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/view/detail/window.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/view/ivy/list.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/store/ivy_logs.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/model/ivy_logs.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/store/ivy_files.js');
+            $view->extendsTemplate($this->viewDir . 'backend/ivi_log/model/ivy_files.js');
+        }
+    }
 }

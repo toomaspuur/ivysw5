@@ -12,6 +12,7 @@ namespace IvyPaymentPlugin\Service;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use IvyPaymentPlugin\Components\CustomObjectNormalizer;
+use IvyPaymentPlugin\Exception\IvyApiException;
 use IvyPaymentPlugin\Exception\IvyException;
 use IvyPaymentPlugin\IvyApi\lineItem;
 use IvyPaymentPlugin\IvyApi\sessionCreate;
@@ -30,9 +31,7 @@ use Shopware\Models\Customer\Customer;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
-use WizmoGmbh\IvyPayment\Exception\IvyApiException;
 
 class ExpressService
 {
@@ -177,7 +176,7 @@ class ExpressService
         $ivyExpressSessionData->setReferenceId($referenceId);
         $ivyExpressSessionData->setExpress(true);
         $ivyExpressSessionData->setMetadata([
-            'sw-context-token' => $session->getId()
+            'sw-context-token' => $session->get('sessionId')
         ]);
 
         // add plugin version as string to know whether to redirect to confirmation page after ivy checkout
@@ -283,7 +282,7 @@ class ExpressService
         Shopware()->Session()->offsetSet('sState', $stateId);
         Shopware()->Session()->offsetSet('sArea', $areaId);
         $this->logger->info('initialize Shop Context');
-        Shopware()->Container()->get(ContextServiceInterface::class)->initializeShopContext();
+        Shopware()->Container()->get('shopware_storefront.context_service')->initializeShopContext();
     }
 
     /**
@@ -331,7 +330,7 @@ class ExpressService
     public function generateSwContextToken()
     {
         $shopID = Shopware()->Shop()->getId();
-        $sessionId = Shopware()->Session()->getId();
+        $sessionId = Shopware()->Session()->get('sessionId');
         $cookies = \json_encode(['session-' . $shopID => $sessionId]);
         $this->logger->debug('generate context token from: ' . $cookies);
         $swContexToken = \base64_encode($cookies);
@@ -452,31 +451,28 @@ class ExpressService
     /**
      * @param array $payload
      * @param array $basket
+     * @param $useTotalVat
      * @return void
      * @throws IvyException
      */
-    public function validateConfirmPayload(array $payload, array $basket)
+    public function validateConfirmPayload(array $payload, array $basket, $useTotalVat = true)
     {
-        $shippingTotal = $basket['sShippingcostsWithTax'];
-        $shippingNet = $basket['sShippingcostsNet'];
-        $shippingVat = $shippingTotal - $shippingNet;
+        $price = $this->ivyHelper->getPriceFromCart($basket);
+        $shippingTotal = $price->getShipping();
+        $total = $price->getTotal();
+        $totalNet = $price->getTotalNet();
+        if ($useTotalVat) {
+            $vat = $price->getVat();
+        } else {
+            $vat = $total - $shippingTotal - $totalNet;
+        }
 
-        $total = $basket['sAmount'];
-        $vatTotal = $basket['sAmountTax'];
-        $totalNet = $total - $vatTotal - $shippingNet;
-        $vat = $vatTotal - $shippingVat;
 
         $violations = [];
         $accuracy = 0.0001;
 
         if (\abs($total - $payload['price']['total']) > $accuracy) {
             $violations[] = '$payload["price"]["total"] is ' . $payload['price']['total'] . ' waited ' . $total;
-        }
-        if (\abs($totalNet - $payload['price']['totalNet']) > $accuracy) {
-            $violations[] = '$payload["price"]["totalNet"] is ' . $payload['price']['totalNet'] . ' waited ' . $totalNet;
-        }
-        if (\abs($vat - $payload['price']['vat']) > $accuracy) {
-            $violations[] = '$payload["price"]["vat"] is ' . $payload['price']['vat'] . ' waited ' . $vat;
         }
         if (\abs($shippingTotal - $payload['price']['shipping']) > $accuracy) {
             $violations[] = '$payload["price"]["shipping"] is ' . $payload['price']['shipping'] . ' waited ' . $shippingTotal;
@@ -492,28 +488,12 @@ class ExpressService
         foreach ($payloadLineItems as $key => $payloadLineItem) {
             /** @var lineItem $lineItem */
             $lineItem = $basket['content'][$key];
-            if ($lineItem['articlename'] !== $payloadLineItem['name']) {
-                $violations[] = '$payloadLineItem["name"] is ' . $payloadLineItem["name"] . ' waited ' . $lineItem['articlename'];
-            }
+            $quantity = $lineItem['quantity'];
+            
             if ($lineItem['ordernumber'] !== $payloadLineItem['referenceId']) {
                 $violations[] = '$payloadLineItem["referenceId"] is ' . $payloadLineItem["referenceId"] . ' waited ' . $lineItem['ordernumber'];
             }
 
-            $singleNet = $lineItem['netprice'];
-            $singleTotal = $lineItem['price'];
-            $singleVat = $singleTotal - $singleNet;
-            $quantity = $lineItem['quantity'];
-            $amount = $singleTotal * $quantity;
-
-            if (\abs($singleNet - $payloadLineItem['singleNet']) > $accuracy) {
-                $violations[] = '$payloadLineItem["singleNet"] is ' . $payloadLineItem["singleNet"] . ' waited ' . $singleNet;
-            }
-            if (\abs($singleVat - $payloadLineItem['singleVat']) > $accuracy) {
-                $violations[] = '$payloadLineItem["singleVat"] is ' . $payloadLineItem["singleVat"] . ' waited ' . $singleVat;
-            }
-            if (\abs($amount - $payloadLineItem['amount']) > $accuracy) {
-                $violations[] = '$payloadLineItem["amount"] is ' . $payloadLineItem["amount"] . ' waited ' . $amount;
-            }
             if ((int)$quantity !== (int)$payloadLineItem['quantity']) {
                 $violations[] = '$payloadLineItem["quantity"] is ' . $payloadLineItem["quantity"] . ' waited ' . $quantity;
             }

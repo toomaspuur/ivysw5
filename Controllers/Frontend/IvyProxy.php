@@ -54,7 +54,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
      */
     public function getWhitelistedCSRFActions()
     {
-        return ['callback', 'confirm', 'finish'];
+        return ['callback', 'confirm', 'finish', 'notify'];
     }
 
     use BasketPersisterTrait;
@@ -98,7 +98,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
      */
     public function postDispatch()
     {
-        \ini_set('serialize_precision', '3');
+        \ini_set('serialize_precision', '-1');
         $response = new IvyJsonResponse($this->data);
         if (isset($this->data['redirect'])) {
             $response->setStatusCode(IvyJsonResponse::HTTP_FOUND);
@@ -111,6 +111,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
     /**
      * @return void
      * @throws Exception
+     * qoute callback
      */
     public function callbackAction()
     {
@@ -143,39 +144,48 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
             $referenceId = $this->request->get('reference');
             $this->logger->info('callback reference: ' . $referenceId);
             /** @var IvyTransaction $ivyPaymentSession */
-            $ivyPaymentSession = $this->em->getRepository(IvyTransaction::class)->findOneBy(['reference' => $referenceId]);
+            $ivyPaymentSession = $this->em->getRepository(IvyTransaction::class)->findByReference($referenceId);
             try {
                 if ($ivyPaymentSession === null) {
                     throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
                 }
-                $updated =  $this->expressService->updateUser($payload);
-                if (!$updated) {
-                    $this->logger->debug('not updated, try to create new guest and login');
-                    $customer = $this->expressService->createAndLoginQuickCustomer($payload);
-                    if (!$customer instanceof Customer) {
-                        throw new IvyException('cann not create customer');
-                    }
-                    $this->logger->info('created customer: ' .  $customer->getEmail());
+                if (isset($payload['shippingAddress']) || isset($payload['shipping']) || isset($payload['billingAddress'])) {
+                    $updated =  $this->expressService->updateUser($payload);
+                    if (!$updated) {
+                        $this->logger->debug('not updated, try to create new guest and login');
+                        $customer = $this->expressService->createAndLoginQuickCustomer($payload);
+                        if (!$customer instanceof Customer) {
+                            throw new IvyException('cann not create customer');
+                        }
+                        $this->logger->info('created customer: ' .  $customer->getEmail());
 
-                    $swContexToken = $this->expressService->generateSwContextToken();
-                    $ivyPaymentSession->setSwContextToken($swContexToken);
-                    $this->em->flush($ivyPaymentSession);
+                        $swContexToken = $this->expressService->generateSwContextToken();
+                        $ivyPaymentSession->setSwContextToken($swContexToken);
+                        $this->em->flush($ivyPaymentSession);
+                    }
                 }
 
+                $userData = $this->getUserData();
+                $this->logger->info('$userData[\'additional\'][\'countryShipping\']: ' . \print_r($userData['additional']['countryShipping'], true));
                 // reload user data in controller
-                $this->View()->assign('sUserData', $this->getUserData());
+                $this->View()->assign('sUserData', $userData);
+
 
                 if (isset($payload['shipping']['shippingAddress'])) {
                     try {
+                        $this->data['shippingMethods'] = [];
                         $paymentId = $this->expressService->getPaymentId();
                         $sDispatches = $this->getDispatches($paymentId);
                         foreach ($sDispatches as $dispatch) {
                             $countries = $this->em->getConnection()
-                                ->fetchFirstColumn('SELECT c.countryiso FROM `s_premium_dispatch_countries` dc INNER JOIN s_core_countries c ON c.id = dc.countryID WHERE c.active = 1 AND dc.dispatchID = :dispatchID',
+                                ->fetchAll('SELECT c.countryiso FROM `s_premium_dispatch_countries` dc INNER JOIN s_core_countries c ON c.id = dc.countryID WHERE c.active = 1 AND dc.dispatchID = :dispatchID',
                                     ['dispatchID' => $dispatch['id']]);
+                            $countries = \array_map(static function($item) {
+                                return $item['countryiso'];
+                            }, $countries);
                             $this->setDispatch($dispatch['id'], $paymentId);
                             // We might change the shop context here, so we need to initialize it again
-                            $this->get(ContextServiceInterface::class)->initializeShopContext();
+                            $this->get('shopware_storefront.context_service')->initializeShopContext();
                             $basket = $this->getBasket();
                             $this->data['shippingMethods'][] = [
                                 'price'     => \round($basket['sShippingcostsWithTax'],2),
@@ -200,7 +210,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                 $discountAmount = 0;
                 $basket = $this->getBasket();
                 foreach ($basket['content'] as $item) {
-                    if ((int)$item['modus'] === CartPositionsMode::VOUCHER) {
+                    if ((int)$item['modus'] === 2) {
                         $discountAmount += $item['amountNumeric'];
                     }
                 }
@@ -208,10 +218,11 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                     $this->data['discount'] = [
                         'amount' => - $discountAmount,
                     ];
+                    $price = $this->ivyHelper->getPriceFromCart($basket, true);
                     $this->data['price'] = [
-                        'totalNet' => $basket['AmountNetNumeric'],
-                        'vat' => $basket['AmountNumeric'] - $basket['AmountNetNumeric'],
-                        'total' => $basket['AmountNumeric']
+                        'totalNet' => $price->getTotalNet(),
+                        'vat' => $price->getVat(),
+                        'total' => $price->getTotal()
                     ];
                 } else {
                     $this->data['discount'] = [];
@@ -251,7 +262,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
 
                 $referenceId = isset($payload['referenceId']) ? $payload['referenceId'] : null;
                 /** @var IvyTransaction $ivyPaymentSession */
-                $ivyPaymentSession = $this->em->getRepository(IvyTransaction::class)->findOneBy(['reference' => $referenceId]);
+                $ivyPaymentSession = $this->em->getRepository(IvyTransaction::class)->findByReference($referenceId);
                 if ($ivyPaymentSession === null) {
                     throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
                 }
@@ -266,7 +277,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                     $this->logger->info('set shipping method:  ' . \print_r($shippingMethod, true));
                     $shippingMethodId = $shippingMethod['reference'];
                     $this->setDispatch($shippingMethodId, $paymentId);
-                    $this->get(ContextServiceInterface::class)->initializeShopContext();
+                    $this->get('shopware_storefront.context_service')->initializeShopContext();
                     $this->expressService->validateConfirmPayload($payload, $this->getBasket());
                     $this->logger->info('confrim payload is valid');
                     parent::confirmAction();
@@ -277,7 +288,7 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
                 }
 
                 $signature = $this->persistBasket();
-                Shopware()->Session()->set('signature', $signature);
+                Shopware()->Session()->offsetSet('signature', $signature);
                 $this->logger->info('redirect to confirm');
                 $this->data = [
                     'redirect' => [
@@ -317,4 +328,113 @@ class Shopware_Controllers_Frontend_IvyProxy extends Shopware_Controllers_Fronte
         return $payload;
     }
 
+    /**
+     * @return void
+     * @throws Exception
+     */
+    public function notifyAction()
+    {
+        $request = $this->Request();
+        $body = $request->getRawBody();
+        $this->logger->debug('receive notification ' . \print_r($body, true));
+        $jsonBody = \json_decode($body, true);
+        try {
+            $XIvySignature = (string)$request->getHeader('X-Ivy-Signature');
+            $this->logger->debug('X-Ivy-Signature: ' . $XIvySignature);
+            if (!$this->ivyHelper->validateNotification($XIvySignature, $body)) {
+                $this->logger->error('invalid notification signature');
+                $this->data = ['success' => false, 'error' => 'invalid notification signature'];
+                return;
+            }
+
+            $type = $jsonBody['type'];
+            if ($type !== 'order_created' && $type !== 'order_updated') {
+                $this->logger->debug('skip notification type ' . $type);
+                $this->data = ['success' => false, 'error' => 'skip notification type ' . $type];
+                return;
+            }
+
+            $payload = $jsonBody['payload'];
+
+            if (empty($payload)) {
+                $this->logger->error('empty notification payload ');
+                $this->data = ['success' => false, 'error' => 'empty notification payload'];
+                return;
+            }
+
+            $paymentToken = isset($payload['metadata']['_sw_payment_token']) ? $payload['metadata']['_sw_payment_token'] : null;
+            if (\is_null($paymentToken)) {
+                throw new IvyException('missing _sw_payment_token');
+            }
+
+            $status = $payload['status'];
+            $this->logger->info('WebHook status is ' . $status);
+            $statusForCreateOrder = \in_array($status, IvyTransaction::CREATE_ORDER_STATUSES, true);
+            $this->logger->info('status for createOrder ' . \var_export($statusForCreateOrder, true));
+            $referenceId = $payload['referenceId'];
+            $ivyPaymentSession = $this->em->getRepository(IvyTransaction::class)->findByReference($referenceId);
+            if ($ivyPaymentSession === null) {
+                throw new IvyException('ivy transaction by reference ' . $referenceId . ' not found');
+            }
+
+            $this->logger->info('confrim payload is valid');
+            $toCreateOrder = $toUpdateOrder = false;
+            $ivyPaymentSession->setStatus($status);
+            $ivyPaymentSession->setUpdated(new \DateTime());
+            $ivyPaymentSession->setIvyOrderId($payload['id']);
+            $this->em->flush($ivyPaymentSession);
+            $order = $ivyPaymentSession->getOrder();
+            if (!$order) {
+                if (!$statusForCreateOrder) {
+                    $this->logger->error('order not found');
+                    throw new IvyException( 'order not found');
+                }
+                $toCreateOrder = true;
+            } elseif (!$order->getNumber()) {
+                if ($statusForCreateOrder) {
+                    $toCreateOrder = true;
+                }
+            } else {
+                $toUpdateOrder = true;
+            }
+            if ($toCreateOrder) {
+                if ($ivyPaymentSession->isExpress()) {
+                    $this->expressService->validateConfirmPayload($payload, $this->getBasket(), false);
+                } else {
+                    $this->expressService->validateConfirmPayload($payload, $this->getBasket());
+                }
+                $signature = $this->persistBasket();
+                $this->logger->info('redirect to confirm');
+                $this->data = [
+                    'redirect' => [
+                        'controller' => 'IvyPayment',
+                        'action' => 'createOrder',
+                        'referenceId' => $referenceId,
+                        '_sw_payment_token' => $signature
+                    ]
+                ];
+                return;
+            }
+            if ($toUpdateOrder) {
+                $orderNumber = $order->getNumber();
+                $sOrder = Shopware()->Modules()->Order();
+                $paymentStatus = IvyTransaction::STATUS_MAP[$status] ?: null;
+                if ($paymentStatus) {
+                    $sOrder->setPaymentStatus($ivyPaymentSession->getOrderId(), $paymentStatus);
+                }
+                $this->data = [
+                    'success' => true,
+                    'displayId' => $orderNumber,
+                    'referenceId' => $orderNumber,
+                    'metadata' => [
+                        'shopwareOrderId' => $orderNumber
+                    ]
+                ];
+                return;
+            }
+        }  catch (IvyException $e) {
+            $this->logger->error($e->getMessage());
+            $this->data = [ 'success' => false, 'error' => $e->getMessage(),];
+        }
+    }
 }

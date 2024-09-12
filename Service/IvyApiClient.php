@@ -11,7 +11,6 @@ namespace IvyPaymentPlugin\Service;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\RequestOptions;
 use IvyPaymentPlugin\Exception\IvyApiException;
 use Monolog\Logger;
 
@@ -59,19 +58,19 @@ class IvyApiClient
     {
         $this->apiLogger->info('send ' . $endpoint . ' ' . $jsonContent);
 
-        $client = new Client([
-            'base_uri' => $this->ivyServiceUrl,
-            'headers' => [
-                'X-Ivy-Api-Key' => $this->ivyApiKey,
-            ],
-        ]);
+        $endpoint = $this->ivyServiceUrl . $endpoint;
+        $client = new Client();
 
-        $headers['content-type'] = 'application/json';
-        $options = [
-            'headers' => $headers,
-            RequestOptions::BODY => $jsonContent,
+        $headers = [
+            'X-Ivy-Api-Key' => $this->ivyApiKey,
+            'content-type' => 'application/json'
         ];
 
+        $options = [
+            'headers' => $headers,
+            'body' => $jsonContent,
+        ];
+        $this->apiLogger->info('send ' . $endpoint . print_r($options, true));
         try {
             $response = $client->post($endpoint, $options);
             $this->apiLogger->info('response: ' . (string)$response->getBody());

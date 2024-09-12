@@ -11,7 +11,7 @@
     {/if}
 {/block}
 
-{block name='frontend_checkout_confirm_form'}
+{block name='frontend_index_content'}
     {if $sUserData.additional.payment.name === 'ivy_payment'}
         <div class="ivy-checkout-confirm-button"
              data-action="{url controller=IvyExpress action=start express='false'}"

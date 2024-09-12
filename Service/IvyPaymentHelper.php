@@ -9,6 +9,8 @@
 
 namespace IvyPaymentPlugin\Service;
 
+use Doctrine\DBAL\ForwardCompatibility\DriverResultStatement;
+use Doctrine\DBAL\ForwardCompatibility\Result;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use IvyPaymentPlugin\Components\CustomObjectNormalizer;
@@ -27,7 +29,6 @@ use Shopware\Models\Country\Country;
 use Shopware\Models\Order\Order;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 class IvyPaymentHelper
@@ -93,6 +94,10 @@ class IvyPaymentHelper
      * @var array
      */
     private $darkTheme;
+    /**
+     * @var bool
+     */
+    private $showDetailBtn;
 
     /**
      * @param array $config
@@ -127,7 +132,15 @@ class IvyPaymentHelper
         $normalizers = [new CustomObjectNormalizer()];
         $this->serializer = new Serializer($normalizers, $encoders);
         $pluginName = Shopware()->Container()->getParameter('ivy_payment_plugin.plugin_name');
-        $this->version = 'sw5' . Shopware()->Container()->get('dbal_connection')->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName])->fetchOne();
+        $result = Shopware()->Container()
+                ->get('dbal_connection')
+                ->executeQuery("SELECT version FROM s_core_plugins WHERE name = :name", ['name' => $pluginName]);
+
+        if (\method_exists(Result::class, 'fetchOne')) {
+            $this->version = 'sw5' . $result->fetchOne();
+        } else {
+            $this->version = 'sw5' . $result->fetchColumn();
+        }
         $this->ivyApiClient = $ivyApiClient;
         $this->darkTheme = [
             'darkThemeDetail' => $config['darkThemeDetail'],
@@ -135,6 +148,15 @@ class IvyPaymentHelper
             'darkThemeCart' => $config['darkThemeCart'],
             'darkThemeRegister' => $config['darkThemeRegister'],
         ];
+        $this->showDetailBtn = !isset($config['showDetailBtn']) || (int)$config['showDetailBtn'] === 1;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShowDetailBtn()
+    {
+        return $this->showDetailBtn;
     }
 
     /**
@@ -295,7 +317,7 @@ class IvyPaymentHelper
         $data = $this->getSessionCreateDataFromOrder($order);
         $data->setMetadata([
             '_sw_payment_token' => $swPaymentToken,
-            'sw-context-token' => Shopware()->Session()->getId(),
+            'sw-context-token' => Shopware()->Session()->get('sessionId'),
             ]);
         $data->setVerificationToken($swPaymentToken);
         $data->setHandshake(true);
@@ -358,7 +380,6 @@ class IvyPaymentHelper
     /**
      * @param IvyTransaction $transaction
      * @return mixed|void
-     * @throws GuzzleException
      */
     public function updateOrder(IvyTransaction $transaction)
     {
@@ -390,7 +411,9 @@ class IvyPaymentHelper
         try {
             $response = $client->post($this->ivyServiceUrl . 'order/update', $options);
         } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
+            $this->logger->error('communication error: ' . $e->getMessage());
+            return;
+        } catch (GuzzleException $e) {
             $this->logger->error('communication error: ' . $e->getMessage());
             return;
         }
@@ -467,21 +490,36 @@ class IvyPaymentHelper
         $shippingNet = $basket['sShippingcostsNet'];
         $shippingVat = $shippingTotal - $shippingNet;
 
-        $total = $basket['sAmount'];
-        $vatTotal = $basket['sAmountTax'];
-        $totalNet = $total - $vatTotal - $shippingNet;
-        $vat = $vatTotal - $shippingVat;
+        if (isset($basket['sAmountWithTax'])) {
+            //Change default price to net:
+            $total = $basket['sAmountWithTax'];
+        } else {
+            //Change default price to gross:
+            $total = $basket['sAmount'];
+        }
 
+        $vatTotal = $basket['sAmountTax'];
+
+        // IVYPLGS-14: subtotal = total - shipping
+        $subTotal = $total - $shippingTotal;
         if ($skipShipping) {
-            $total -= $shippingTotal;
+            $total = $subTotal;
             $shippingTotal = 0;
+            $vat = $vatTotal - $shippingVat;
+            // IVYPLGS-14: total = totalNet + vat + shipping
+            $totalNet = $total - $vat;
+        } else {
+            $vat = $vatTotal;
+            // IVYPLGS-14: total = totalNet + vat + shipping
+            $totalNet = $total - $vatTotal - $shippingNet;
         }
 
         $price = new price();
-        $price->setTotalNet($totalNet)
-            ->setVat($vat)
-            ->setTotal($total)
-            ->setShipping($shippingTotal)
+        $price->setTotalNet(\round($totalNet, 2))
+            ->setVat(\round($vat,2))
+            ->setTotal(\round($total,2))
+            ->setSubTotal(\round($subTotal,2))
+            ->setShipping(\round($shippingTotal,2))
             ->setCurrency($basket['sCurrencyName']);
         return $price;
     }
@@ -496,17 +534,22 @@ class IvyPaymentHelper
         $ivyMcc = (string)$this->getIvyMcc();
         foreach ($basket['content'] as $swLineItem) {
             $lineItem = new lineItem();
-            $singleNet = $swLineItem['netprice'];
-            $singleTotal = $swLineItem['price'];
+            $singleNet = (float)$swLineItem['netprice'];
+            $singleTotal = (float)$swLineItem['priceNumeric'];
+            $taxRate = $swLineItem['additional_details']['tax'] ?? 0;
+            if ($singleNet === $singleTotal  && $taxRate > 0) {
+                //Change default price to net:
+                $singleTotal = round($singleNet * (1 + $taxRate / 100), 2);
+            }
             $singleVat = $singleTotal - $singleNet;
             $quantity = $swLineItem['quantity'];
 
             $lineItem->setName($swLineItem['articlename'])
                 ->setReferenceId($swLineItem['ordernumber'])
                 ->setCategory($ivyMcc)
-                ->setSingleNet($singleNet)
-                ->setSingleVat($singleVat)
-                ->setAmount($singleTotal * $quantity)
+                ->setSingleNet(\round($singleNet,2))
+                ->setSingleVat(\round($singleVat, 2))
+                ->setAmount(\round($singleTotal * $quantity, 2))
                 ->setQuantity($quantity);
 
             if (isset($swLineItem['additional_details']['image']['source'])) {

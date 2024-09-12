@@ -3,7 +3,9 @@
         xsi:noNamespaceSchemaLocation="../../../engine/Shopware/Components/Plugin/schema/plugin.xsd">
     <label lang="de">Ivy - Nachhaltig Bezahlen</label>
     <label lang="en">Ivy - Sustainable Shopping</label>
-    <version>0.6.10</version>
+    
+    <version>1.0.2</version>
+
     <description lang="en">Ivy - Sustainable Payment. Choose Ivy at the payment step. Climate action with every transaction. Finance climate projects by helping online shops save on payment fees.</description>
     <description lang="de">Ivy - Nachhaltig. Wähle Ivy bei den Zahlungsarten. Klimaschutz mit jeder Transaktion. Finanziere Klimaschutz, indem du Online-Shops hilfst, Zahlungsgebühren zu sparen.</description>
     <copyright>(c) by HammerCode OÜ</copyright>
@@ -11,8 +13,78 @@
     <link>https://www.hammercode.eu/</link>
     <author>HammerCode OÜ</author>
 
-    <compatibility minVersion="5.6.9" />
+    <compatibility minVersion="5.6.0" />
 
+    <changelog version="1.0.2">
+        <changes lang="de">Fix discount bug</changes>
+        <changes lang="en">Fix discount bug</changes>
+    </changelog>  
+        
+    <changelog version="1.0.1">
+        <changes lang="de">Sync Order Ids</changes>
+        <changes lang="en">Sync Order Ids</changes>
+    </changelog>      
+     
+    <changelog version="1.0.0">
+        <changes lang="de">Change to reservation orders</changes>
+        <changes lang="en">Change to reservation orders</changes>
+    </changelog>   
+     
+    <changelog version="0.6.20">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+        
+    <changelog version="0.6.19">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+        
+    <changelog version="0.6.18">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+        
+    <changelog version="0.6.17">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+        
+    <changelog version="0.6.16">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+
+    <changelog version="0.6.15">
+        <changes lang="de">Fix Express Redirect</changes>
+        <changes lang="en">Fix express redirect</changes>
+    </changelog>
+        
+    <changelog version="0.6.14">
+        <changes lang="de">Fix vat check</changes>
+        <changes lang="en">Fix vat check</changes>
+    </changelog>
+
+    <changelog version="0.6.13">
+        <changes lang="de">Fix subtotals</changes>
+        <changes lang="en">Fix subtotals</changes>
+    </changelog>
+
+    <changelog version="0.6.12">
+        <changes lang="de">Ajax Warenkorb Layout</changes>
+        <changes lang="en">ajax cart layout</changes>
+    </changelog>
+    
+    <changelog version="0.6.11">
+        <changes lang="de">Bug Fixes</changes>
+        <changes lang="en">Bug Fixes</changes>
+    </changelog>
+
+    <changelog version="0.6.10">
+        <changes lang="de">Feat: Theme Farbe anpassbar</changes>
+        <changes lang="en">Feat: theme color is adaptable</changes>
+    </changelog>
+    
     <changelog version="0.6.9">
         <changes lang="de">Fix: config service ist nun public</changes>
         <changes lang="en">Fix: make config service public</changes>
